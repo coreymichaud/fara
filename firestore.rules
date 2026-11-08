@@ -1,0 +1,7 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // The public web client never connects to Firestore. Admin SDK is authorized by IAM.
+    match /{document=**} { allow read, write: if false; }
+  }
+}

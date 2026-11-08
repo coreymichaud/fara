@@ -1,0 +1,65 @@
+import type { Area, Dataset, Survey } from '@/lib/domain/schema';
+import { initialScenario } from '@/lib/domain/planner';
+export const areas: Area[] = [
+  {
+    id: '12095000100',
+    label: 'Census Tract 1',
+    county: 'Orange',
+    coordinates: [-81.4, 28.5],
+    poverty: 10,
+    povertyMoe: 2,
+    lowAccess: 10,
+    snap: 5,
+    population: 200,
+    households: 100,
+    urban: true,
+  },
+  {
+    id: '12095000200',
+    label: 'Census Tract 2',
+    county: 'Orange',
+    coordinates: [-81.4, 28.51],
+    poverty: 30,
+    povertyMoe: 3,
+    lowAccess: 50,
+    snap: 15,
+    population: 600,
+    households: 300,
+    urban: true,
+  },
+  {
+    id: '12069000100',
+    label: 'Census Tract 3',
+    county: 'Lake',
+    coordinates: [-81.8, 28.9],
+    poverty: 20,
+    povertyMoe: 1,
+    lowAccess: 30,
+    snap: null,
+    population: 400,
+    households: 200,
+    urban: false,
+  },
+];
+export const dataset: Dataset = {
+  areas,
+  manifest: {
+    schemaVersion: '1.0',
+    methodVersion: 'priority-proximity-v1',
+    datasetVersion: '0123456789ab',
+    mode: 'illustrative',
+    generatedAt: '2026-11-07T12:00:00+00:00',
+    geography: ['Lake', 'Orange'],
+    areaCount: 3,
+    retailerCount: 0,
+    sourceHashes: { fixture: 'a'.repeat(64) },
+    assetHashes: {},
+    units: { poverty: 'percent' },
+    publicationBasis: 'Explicit synthetic fixture; not observed data',
+    baseline: 'Unknown',
+    missingness: { poverty: 0, lowAccess: 0, snap: 1 },
+    sourceDates: { acs: 'Synthetic test fixture' },
+  },
+};
+export const scenario = { ...initialScenario(areas[0]), radius: 2, capacity: 200 };
+export const survey: Survey = { works: 'Yes', barrier: 'None', time: 'Weekend', travel: 'Walk' };

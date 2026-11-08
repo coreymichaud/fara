@@ -1,0 +1,13 @@
+node_modules
+.next
+analysis
+data
+public/data
+public/vendor
+references
+coverage
+package-lock.json
+Food_Access_Codex_Build_Brief_FINAL.md
+playwright-report
+test-results
+next-env.d.ts
