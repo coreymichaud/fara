@@ -204,6 +204,8 @@ th {
 
 /* The masthead frames the working canvas; orange marks the current section. */
 .site-header {
+  position: relative;
+  z-index: 10;
   min-height: 76px;
   display: flex;
   align-items: center;
@@ -255,6 +257,9 @@ th {
 .site-header a:focus-visible {
   outline-color: var(--orange);
   outline-offset: -5px;
+}
+.menu-toggle {
+  display: none;
 }
 .workspace {
   max-width: 1920px;
@@ -1266,6 +1271,122 @@ th {
   text-decoration: underline;
 }
 
+/* A task index and source-led entries keep the resource library easy to scan. */
+.resources-page {
+  max-width: 1240px;
+  margin: auto;
+  padding: 48px 32px 64px;
+}
+.resources-heading {
+  padding-bottom: 32px;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 36px;
+}
+.resources-heading h1 {
+  margin-bottom: 20px;
+}
+.resources-heading .page-lead {
+  max-width: 65ch;
+}
+.resources-reviewed {
+  font-size: var(--secondary);
+  color: var(--gray-500);
+  margin-top: 20px;
+  max-width: 65ch;
+}
+.resources-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+}
+.resource-topics {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  padding-right: 24px;
+  border-right: 1px solid var(--border);
+}
+.resource-topics a {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 10px 0;
+  line-height: 1.5;
+}
+.resource-section + .resource-section {
+  margin-top: 48px;
+}
+.resource-section-heading {
+  margin-bottom: 24px;
+}
+.resource-section-heading h2 {
+  scroll-margin-top: 24px;
+  margin-bottom: 12px;
+}
+.resource-section-heading p {
+  color: var(--gray-500);
+  max-width: 65ch;
+}
+.resource-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.resource-entry {
+  border-top: 1px solid var(--border);
+  padding: 24px 0 28px;
+}
+.resource-entry h3 {
+  margin: 10px 0 8px;
+}
+.resource-entry h3 a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 44px;
+  max-width: 100%;
+  text-decoration: none;
+}
+.resource-entry h3 a:hover {
+  text-decoration: underline;
+}
+.resource-entry h3 svg {
+  align-self: center;
+}
+.resource-entry > p {
+  color: var(--gray-700);
+  line-height: 1.7;
+  max-width: 68ch;
+}
+.resource-owner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 20px;
+  color: var(--gray-500);
+  font-size: var(--secondary);
+}
+.resource-owner > span:first-child {
+  font-family: var(--font-heading);
+}
+.resource-note {
+  margin-top: 32px;
+  padding: 24px;
+  border-left: 3px solid var(--muted-blue);
+  background: white;
+}
+.resource-note h2 {
+  font-size: var(--h3);
+  margin-bottom: 12px;
+}
+.resource-note p {
+  font-size: var(--secondary);
+  color: var(--gray-700);
+  line-height: 1.7;
+}
+
 /* Shared documents, plans, and community forms use the same type and spacing. */
 .reading-page {
   max-width: 960px;
@@ -1523,6 +1644,13 @@ th {
   }
 }
 @media (max-width: 900px) {
+  .resources-page {
+    padding-inline: 24px;
+  }
+  .resources-layout {
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: 28px;
+  }
   .site-header {
     padding-inline: 20px;
   }
@@ -1555,8 +1683,87 @@ th {
     padding: 0 16px;
     gap: 16px;
   }
+  .menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 16px;
+    margin-left: auto;
+    border: 1px solid var(--muted-blue);
+    border-radius: 4px;
+    background: transparent;
+    color: white;
+    font-size: var(--secondary);
+  }
+  .menu-toggle[aria-expanded='true'] {
+    background: var(--blue);
+  }
+  .menu-toggle:focus-visible {
+    outline-color: var(--orange);
+  }
   .site-header nav {
-    gap: 18px;
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 0;
+    padding: 8px 16px 16px;
+    background: var(--ink);
+    border-top: 1px solid var(--muted-blue);
+    box-shadow: 0 8px 16px #1e343f20;
+  }
+  .site-header nav[data-open='true'] {
+    display: flex;
+  }
+  .site-header nav a {
+    border-bottom: 0;
+    border-left: 3px solid transparent;
+    padding: 10px 12px;
+    min-height: 48px;
+    font-size: var(--body);
+  }
+  .site-header nav a[data-active='true'] {
+    border-left-color: var(--orange);
+    background: var(--blue);
+  }
+  .resources-page {
+    padding: 36px 20px 48px;
+  }
+  .resources-layout {
+    display: block;
+  }
+  .resources-heading {
+    padding-bottom: 24px;
+    margin-bottom: 24px;
+  }
+  .resource-topics {
+    position: static;
+    border: 0;
+    padding: 16px 20px;
+    background: #f0f0e9;
+    margin-bottom: 32px;
+  }
+  .resource-topics .eyebrow {
+    margin-bottom: 4px;
+  }
+  .resource-topics a {
+    min-height: 44px;
+    padding: 8px 0;
+  }
+  .resource-section-heading h2 {
+    scroll-margin-top: 20px;
+  }
+  .resource-owner {
+    display: block;
+  }
+  .resource-owner > span {
+    display: block;
+  }
+  .resource-owner > span + span {
+    margin-top: 4px;
   }
   .wordmark {
     font-size: var(--h2);

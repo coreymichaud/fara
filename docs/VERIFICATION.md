@@ -4,34 +4,34 @@
 
 ## Checks
 
-| Check                                               | Result                                                                                                                                                                       |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Specification, source inventory, and brand review   | Completed; rendered brand pages inspected                                                                                                                                    |
-| Local uv pipeline / processed-asset validation      | Pass: observed mode, 490 tracts, 488 eligible, 1,694 retailer points; version `5d7db3d37ab5`                                                                                 |
-| Six source EDA notebooks                            | Executed successfully in fresh uv kernels; aggregate-only outputs retained                                                                                                   |
-| ESLint / Prettier / strict TypeScript               | Pass                                                                                                                                                                         |
-| Python Ruff lint / Ruff format / strict mypy        | Pass                                                                                                                                                                         |
-| Vitest + React Testing Library + Firestore Emulator | **90 tests passed** across 12 test files                                                                                                                                     |
-| V8 statement coverage                               | **100%: 758 / 758**                                                                                                                                                          |
-| V8 branch coverage                                  | **100%: 517 / 517**                                                                                                                                                          |
-| V8 function coverage                                | **100%: 260 / 260**                                                                                                                                                          |
-| V8 line coverage                                    | **100%: 678 / 678**                                                                                                                                                          |
-| Pytest + Hypothesis + pytest-cov                    | **19 tests passed**                                                                                                                                                          |
-| Python statement / line coverage                    | **100%: 214 / 214**, zero excluded/missing lines                                                                                                                             |
-| Python branch coverage                              | **100%: 72 / 72**, zero partial/missing branches                                                                                                                             |
-| Next production build                               | Pass, standalone output with supported webpack builder                                                                                                                       |
-| Full browser acceptance suite                       | **3 passed**, including the share/survey/creator journey in separate Chromium contexts against the Firestore Emulator                                                        |
-| Viewports                                           | 390×844, 820×1180, 1440×1080, 1920×1080; no horizontal page overflow in tested states                                                                                        |
-| Automated accessibility                             | Zero axe WCAG 2A/AA/2.1AA violations in desktop/phone workspace, phone area details, public phone survey, and creator results; keyboard controls and chart tooltip exercised |
-| Basemap failure                                     | Real local Census polygon fallback, selection and planning tested; retailer overlay also tested at its integration boundary                                                  |
-| Local production Docker build                       | Pass, `linux/amd64`, Node 24, non-root standalone image                                                                                                                      |
-| Final image/container smoke                         | Pass: homepage, methodology/about, health, manifest, area JSON and map GeoJSON; forbidden raw/intermediate/notebook/reference/secret paths absent                            |
-| Production persistence failure                      | Pass: writes return 503 and a visible error when Firestore is unconfigured; no filesystem fallback                                                                           |
-| Git exclusions                                      | Verified raw/generated datasets and `.env.local` ignored; no tracked raw/processed web data                                                                                  |
-| Shell scripts                                       | `bash -n` passes; help paths and local image smoke workflow exercised                                                                                                        |
-| Single check command                                | `npm run check` completed successfully with emulator variables and `E2E_STORAGE_ADAPTER=firestore`                                                                           |
+| Check                                               | Result                                                                                                                                                                                     |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Specification, source inventory, and brand review   | Completed; rendered brand pages inspected                                                                                                                                                  |
+| Local uv pipeline / processed-asset validation      | Pass: observed mode, 490 tracts, 488 eligible, 1,694 retailer points; version `5d7db3d37ab5`                                                                                               |
+| Six source EDA notebooks                            | Executed successfully in fresh uv kernels; aggregate-only outputs retained                                                                                                                 |
+| ESLint / Prettier / strict TypeScript               | Pass                                                                                                                                                                                       |
+| Python Ruff lint / Ruff format / strict mypy        | Pass                                                                                                                                                                                       |
+| Vitest + React Testing Library + Firestore Emulator | **95 tests passed** across 13 test files                                                                                                                                                   |
+| V8 statement coverage                               | **100%: 775 / 775**                                                                                                                                                                        |
+| V8 branch coverage                                  | **100%: 521 / 521**                                                                                                                                                                        |
+| V8 function coverage                                | **100%: 269 / 269**                                                                                                                                                                        |
+| V8 line coverage                                    | **100%: 694 / 694**                                                                                                                                                                        |
+| Pytest + Hypothesis + pytest-cov                    | **19 tests passed**                                                                                                                                                                        |
+| Python statement / line coverage                    | **100%: 214 / 214**, zero excluded/missing lines                                                                                                                                           |
+| Python branch coverage                              | **100%: 72 / 72**, zero partial/missing branches                                                                                                                                           |
+| Next production build                               | Pass, standalone output with supported webpack builder                                                                                                                                     |
+| Full browser acceptance suite                       | **4 passed**, including the share/survey/creator journey in separate Chromium contexts against the Firestore Emulator                                                                      |
+| Viewports                                           | 390×844, 820×1180, 1440×1080, 1920×1080; no horizontal page overflow in tested states                                                                                                      |
+| Automated accessibility                             | Zero axe WCAG 2A/AA/2.1AA violations in desktop/phone workspace and Resources, phone area details, public phone survey, and creator results; keyboard controls and chart tooltip exercised |
+| Basemap failure                                     | Real local Census polygon fallback, selection and planning tested; retailer overlay also tested at its integration boundary                                                                |
+| Local production Docker build                       | Pass, `linux/amd64`, Node 24, non-root standalone image                                                                                                                                    |
+| Final image/container smoke                         | Pass: homepage, methodology/about/resources, health, manifest, area JSON and map GeoJSON; forbidden raw/intermediate/notebook/reference/secret paths absent                                |
+| Production persistence failure                      | Pass: writes return 503 and a visible error when Firestore is unconfigured; no filesystem fallback                                                                                         |
+| Git exclusions                                      | Verified raw/generated datasets and `.env.local` ignored; no tracked raw/processed web data                                                                                                |
+| Shell scripts                                       | `bash -n` passes; help paths and local image smoke workflow exercised                                                                                                                      |
+| Single check command                                | `npm run check` completed successfully with emulator variables and `E2E_STORAGE_ADAPTER=firestore`                                                                                         |
 
-A source-only checkout without raw datasets, generated web data, local environment files, or supplied reference inputs also passed ESLint, Prettier, Next route-type generation, strict TypeScript, and all 90 application tests at 100% coverage using an isolated Firestore Emulator. This verifies the data-independent CI path; production builds still require the locally processed web assets.
+A source-only checkout without raw datasets, generated web data, local environment files, or supplied reference inputs also passed ESLint, Prettier, Next route-type generation, strict TypeScript, and all 95 application tests at 100% coverage using an isolated Firestore Emulator. This verifies the data-independent CI path; production builds still require the locally processed web assets.
 
 The JavaScript coverage scope is all authored `src/**/*.{ts,tsx}` and `scripts/*.mjs`. Only the five route files consisting solely of framework exports/runtime declarations are excluded; their actual handler implementations are covered. No application logic or uncovered branches are marked coverage-exempt, and thresholds remain 100. V8 reports the empty/type declaration storage module without executable statements as an empty file. Framework configuration, generated vendor modules, Next build output and external dependencies are outside application-source coverage.
 
@@ -49,7 +49,7 @@ E2E_STORAGE_ADAPTER=firestore npm run check
 
 Verified local image tag: `food-access:local`.
 
-Verified local image identity: `sha256:926d09d8f1acbb093bd355f89d3bc42f8f9ec6b2a082a3e3c87e0a36b4500d97` (`linux/amd64`). Artifact Registry push and Cloud Run deployment remain pending.
+Verified local image identity: `sha256:754dd266a97661dd4f075f0d31cde682e4d73ae185ed4d0516245f9ebd1a2dfe` (`linux/amd64`). Artifact Registry push and Cloud Run deployment remain pending.
 
 ```sh
 docker build --platform linux/amd64 -t food-access:local .
@@ -59,7 +59,7 @@ bash scripts/test-container.sh food-access:local
 The final smoke output was:
 
 ```text
-Smoke passed: homepage, methodology, about, health, manifest, 490 areas and map geometry
+Smoke passed: homepage, methodology, about, resources, health, manifest, 490 areas and map geometry
 No raw data, source notebooks, brand PDF or local secrets in final image
 Production writes fail closed without Firestore configuration.
 ```
@@ -72,7 +72,7 @@ Application screenshots are in [screenshots/](screenshots/). A separate browser 
 
 The evidence chart keeps an explicit height when its mobile panel is hidden. Unit and browser checks cover the hidden panel without chart-size warnings, readable axes and tooltip text, and keyboard interaction. Jupyter emits a local-kernel TCP warning during execution; kernels were local and no notebook server was published.
 
-The dependency audit reported **zero known production dependency vulnerabilities**. The full development-tool tree still reports **20 moderate findings**, primarily tooling/transitive dependencies; the proposed forced remediation would downgrade Firebase tooling and was not applied. OS-image CVE scanning, broad browser-engine testing, assistive-technology review and live operational monitoring were not performed. Search indexing is disabled for this prototype. Canonical URLs and business structured data are omitted until a deployment domain and appropriate content are available.
+The dependency audit reported **zero known production dependency vulnerabilities**. The full development-tool tree still reports **20 moderate findings**, primarily tooling/transitive dependencies; the proposed forced remediation would downgrade Firebase tooling and was not applied. OS-image CVE scanning, broad browser-engine testing, assistive-technology review and live operational monitoring were not performed. Search indexing is disabled for this application. Canonical URLs and business structured data are omitted until a deployment domain and appropriate content are available.
 
 ## Cloud deployment: pending account setup
 
@@ -85,9 +85,9 @@ The exact remaining account-dependent commands are in [DEPLOYMENT.md](DEPLOYMENT
 ```sh
 PROJECT_ID=your-project-id REGION=us-central1 \
 SERVICE_ACCOUNT=food-access-runtime@your-project-id.iam.gserviceaccount.com \
-PUBLIC_DEMO=true bash scripts/deploy-gcp.sh
+PUBLIC_ACCESS=true bash scripts/deploy-gcp.sh
 ```
 
 That script builds from this local data-holding checkout, tests the image, pushes to Artifact Registry and deploys the exact pushed digest. The cloud steps require an authenticated deployer account. Local preflight, build, and smoke checks passed; the cloud steps have not been run. Project/billing/deploy flag syntax was checked against the official [project creation](https://docs.cloud.google.com/sdk/gcloud/reference/projects/create), [billing linkage](https://docs.cloud.google.com/sdk/gcloud/reference/billing/projects/link), [Firestore creation](https://docs.cloud.google.com/sdk/gcloud/reference/firestore/databases/create), and [Cloud Run deployment](https://docs.cloud.google.com/sdk/gcloud/reference/run/deploy) references.
 
-The five-slide outline, two-minute demo path, and 80-second video shot list are available in `docs/`. The presentation and video still need to be produced and uploaded.
+The Resources page links to official operating guidance, referral tools, and Central Florida organizations. Its source-selection and review process is documented in [resources.md](resources.md).

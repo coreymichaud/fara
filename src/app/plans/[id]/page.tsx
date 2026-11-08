@@ -21,7 +21,7 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
       <main id="main" className="reading-page public-plan">
         <div className="eyebrow">{product.name} · Saved plan</div>
         {manifest.mode === 'illustrative' && (
-          <div className="illustrative">Illustrative demo data</div>
+          <div className="illustrative">Illustrative test data</div>
         )}
         <h1>{scenario.title}</h1>
         <p className="public-subtitle">

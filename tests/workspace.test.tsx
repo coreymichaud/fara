@@ -239,7 +239,7 @@ describe('working planning controls', () => {
         }}
       />,
     );
-    expect(screen.getByText(/Illustrative demo data/)).toBeInTheDocument();
+    expect(screen.getByText(/Illustrative test data/)).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText('Data availability'), 'missing');
     expect(screen.getByText(/Some indicators are missing/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save & share this plan' })).toBeDisabled();

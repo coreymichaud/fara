@@ -96,7 +96,7 @@ test('responsive layouts, visible brand styling, accessibility and screenshots',
     ['phone', 390, 844],
     ['tablet', 820, 1180],
     ['desktop', 1440, 1080],
-    ['presentation', 1920, 1080],
+    ['wide', 1920, 1080],
   ] as const) {
     await page.setViewportSize({ width, height });
     await page.goto('/');
@@ -251,4 +251,86 @@ test('an unavailable basemap has a working local boundary fallback', async ({ pa
     await expect(page.getByRole('button', { name, exact: true })).toBeInViewport({ ratio: 1 });
   await expect(page.locator('.area-heading h2')).toBeInViewport({ ratio: 1 });
   await expect(page.getByRole('button', { name: 'Save & share this plan' })).toBeEnabled();
+});
+
+test('nonprofit resources are reachable, readable and usable on desktop and phones', async ({
+  page,
+}, testInfo) => {
+  const pageErrors: string[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 1080 });
+    await page.goto('/');
+    const navigation = page.getByRole('navigation', { name: 'Main navigation' });
+    const menu = page.getByRole('button', { name: 'Menu', exact: true });
+    if (width === 390) {
+      await expect(navigation).toBeHidden();
+      const bounds = await menu.boundingBox();
+      expect(bounds!.height).toBeGreaterThanOrEqual(44);
+      expect(bounds!.width).toBeGreaterThanOrEqual(44);
+      await menu.click();
+      await expect(navigation).toBeVisible();
+      await navigation.getByRole('link', { name: 'Resources' }).focus();
+      await page.keyboard.press('Escape');
+      await expect(navigation).toBeHidden();
+      await expect(menu).toBeFocused();
+      await menu.click();
+    } else {
+      await expect(menu).toBeHidden();
+    }
+    await navigation.getByRole('link', { name: 'Resources' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Resources' })).toBeVisible();
+    await expect(page.locator('#main-navigation')).toHaveAttribute('data-open', 'false');
+    if (width === 390) await menu.click();
+    await expect(navigation.getByRole('link', { name: 'Resources' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    if (width === 390) {
+      const openMenuAccessibility = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+        .analyze();
+      expect(openMenuAccessibility.violations).toEqual([]);
+      await page.keyboard.press('Escape');
+      await expect(menu).toBeFocused();
+    }
+    const topics = page.getByRole('navigation', { name: 'Resource topics' });
+    for (const [title, id] of [
+      ['Run a food program', 'operations'],
+      ['Make a referral', 'referrals'],
+      ['Central Florida organizations', 'local-network'],
+    ]) {
+      await topics.getByRole('link', { name: title }).click();
+      await expect(page).toHaveURL(new RegExp(`/resources#${id}$`));
+      await expect(page.getByRole('heading', { name: title, exact: true })).toBeInViewport();
+    }
+    const providers = page.locator('.resource-entry h3 a');
+    await expect(providers).toHaveCount(16);
+    expect(
+      await providers.evaluateAll((links) =>
+        links.every(
+          (link) =>
+            link instanceof HTMLAnchorElement &&
+            link.protocol === 'https:' &&
+            link.target === '_blank' &&
+            link.relList.contains('noopener') &&
+            link.relList.contains('noreferrer') &&
+            link.textContent?.includes('opens in a new tab'),
+        ),
+      ),
+    ).toBe(true);
+    await expect(page.getByText(/Products carry handling fees/)).toBeVisible();
+    await expect(page.getByText(/This is a student service/)).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    const accessibility = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+      .analyze();
+    expect(accessibility.violations).toEqual([]);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: testInfo.outputPath(`resources-${width}-viewport.png`) });
+    await page.screenshot({ path: testInfo.outputPath(`resources-${width}.png`), fullPage: true });
+  }
+  expect(pageErrors).toEqual([]);
 });

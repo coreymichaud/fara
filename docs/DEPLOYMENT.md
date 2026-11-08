@@ -6,7 +6,7 @@ Local processing, Next production build, linux/amd64 Docker build and container 
 
 ## 1. Choose and authenticate a project
 
-Install [gcloud](https://cloud.google.com/sdk/docs/install), Docker and Node 24 LTS. Use an existing billed project or create one in the Cloud console. Project IDs are globally unique; replace all safe placeholders consistently. Billing must be enabled by an authorized billing-account user. Cloud Run, registry storage and Firestore can incur charges; free tiers and quotas vary. Limit instances and delete unused resources after the demo.
+Install [gcloud](https://cloud.google.com/sdk/docs/install), Docker and Node 24 LTS. Use an existing billed project or create one in the Cloud console. Project IDs are globally unique; replace all safe placeholders consistently. Billing must be enabled by an authorized billing-account user. Cloud Run, registry storage and Firestore can incur charges; free tiers and quotas vary. Limit instances and remove resources when they are no longer needed.
 
 ```sh
 export PROJECT_ID=your-project-id
@@ -25,7 +25,7 @@ gcloud billing projects describe "$PROJECT_ID"
 If you are creating a new project rather than selecting an existing billed one, authenticate first, choose a unique project ID above, and have the project/billing owner run:
 
 ```sh
-gcloud projects create "$PROJECT_ID" --name='Food access prototype'
+gcloud projects create "$PROJECT_ID" --name='FARA'
 gcloud billing accounts list
 export BILLING_ACCOUNT_ID=your-billing-account-id
 gcloud billing projects link "$PROJECT_ID" --billing-account="$BILLING_ACCOUNT_ID"
@@ -73,7 +73,7 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" \
   --member="serviceAccount:$SERVICE_ACCOUNT" --role=roles/datastore.user
 ```
 
-`roles/datastore.user` is the narrow standard data-read/write role needed by this implementation’s document get/list/create/update operations and Firestore transactions; it also includes some permissions (such as data deletion) not exposed by this app. A custom role can narrow that further after IAM review. It does not grant project administration. Prefer database-scoped IAM if your organization’s setup supports it; the commands here grant the standard role in this dedicated demo project. No storage, BigQuery, AI, or service-account-key permissions are needed at runtime.
+`roles/datastore.user` is the narrow standard data-read/write role needed by this implementation’s document get/list/create/update operations and Firestore transactions; it also includes some permissions (such as data deletion) not exposed by this app. A custom role can narrow that further after IAM review. It does not grant project administration. Prefer database-scoped IAM if your organization’s setup supports it; the commands here grant the standard role in this dedicated project. No storage, BigQuery, AI, or service-account-key permissions are needed at runtime.
 
 The deployer separately needs Cloud Run Admin (`roles/run.admin`, including service IAM changes for public access), Artifact Registry Writer on the repository, and Service Account User on this specific runtime account. Initial API/repository/database/IAM creation requires additional owner-managed roles. For a separate deployer, the owner can use:
 
@@ -135,11 +135,11 @@ The single repeatable entry point is:
 ```sh
 PROJECT_ID="$PROJECT_ID" REGION="$REGION" \
 SERVICE_ACCOUNT="$SERVICE_ACCOUNT" SERVICE_NAME="$SERVICE_NAME" \
-REPOSITORY="$REPOSITORY" PUBLIC_DEMO=true \
+REPOSITORY="$REPOSITORY" PUBLIC_ACCESS=true \
 bash scripts/deploy-gcp.sh
 ```
 
-`PUBLIC_DEMO=true` is the explicit choice to allow unauthenticated readers for the hackathon. Without it, the script deploys privately. An organization policy may prohibit public invokers; do not work around that policy. Use an authenticated Cloud Run proxy for review instead.
+`PUBLIC_ACCESS=true` allows unauthenticated access to the service. Without it, the script deploys privately. An organization policy may prohibit public invokers; do not work around that policy. Use an authenticated Cloud Run proxy for verification instead.
 
 The script’s actual sequence is: validate assets → check Docker/Firestore Native → configure registry auth → `docker build --platform linux/amd64` locally → run `test-container.sh` → push → resolve repository digest → `gcloud run deploy --image=<digest>` with the dedicated account. It sets `GOOGLE_CLOUD_PROJECT` and `STORAGE_ADAPTER=firestore`; it never supplies emulator or JSON storage settings. The service uses port 8080, 1 GiB memory, 1 CPU, concurrency 40, 60-second request timeout, and 0–3 instances. Review these limits for real usage.
 
@@ -171,7 +171,7 @@ gcloud run services describe "$SERVICE_NAME" --project="$PROJECT_ID" \
 The script smoke test verifies homepage, methodology/about, health, manifest, a representative data file and map geometry agreement. Health reports **configuration**, not a successful Firestore round-trip. Manually prove the mutable workflow:
 
 1. Open the URL on a laptop and phone. Select a tract, change radius/capacity and compare an alternative.
-2. Save a plan. Keep its separate private creator link safe; do not put it in slides/video or public chat.
+2. Save a plan. Keep its separate private creator link safe; do not put it in public documents or channels.
 3. Open only the public URL in incognito/another browser, submit all four fixed-choice answers, and verify success.
 4. Confirm `/api/plans/PLAN_ID/manage` is 403 in the visitor context. It must never return raw responses or hashes.
 5. Open the creator link, verify n increments and sparse breakdowns are withheld, then close the survey and refresh the public page.
@@ -195,14 +195,14 @@ gcloud run services update-traffic "$SERVICE_NAME" \
 
 A rollback changes serving image/code, not saved Firestore data. After a fix, rerun the same deploy script; it makes a new timestamped image tag and deploys its exact digest. Keep schema changes backwards compatible with saved snapshots.
 
-- **Cloud Run 403:** verify public-invoker policy/organization rules; authenticated access is distinct from public demo access.
+- **Cloud Run 403:** verify public-invoker policy/organization rules; authenticated access is distinct from public service access.
 - **Firestore 403:** verify runtime account on the active revision, the project ID, database mode and the account’s Datastore User binding. Deployer permissions do not automatically apply to the runtime.
 - **Missing ADC:** attach the service account; do not patch in a key file. Emulator variables must be absent in production.
 - **Container fails to start:** inspect the startup log, port 8080, `HOSTNAME`, standalone copy steps and manifest. `test-container.sh` should reproduce missing-file issues locally.
 - **Tile failure:** local Census boundaries/list remain available. Check network/CSP/provider terms before changing the basemap.
 - **Survey 409/429:** survey may be closed, browser already submitted, response cap reached, or per-plan minute limit triggered. These failures are visible and are not fake success.
 
-After the demo, resource deletion is optional and destructive. Export needed decision briefs first. Only run these cleanup commands when you intend to remove the service/images:
+When retiring the service, export needed decision briefs first. Resource deletion is destructive. Only run these cleanup commands when you intend to remove the service/images:
 
 ```sh
 gcloud run services delete "$SERVICE_NAME" --project="$PROJECT_ID" --region="$REGION"
@@ -213,4 +213,4 @@ These commands do not delete Firestore; database deletion is intentionally not a
 
 ## Before real-world use
 
-Review data licensing with the organizers, Avenir webfont rights, public-note handling, anonymous survey abuse protection and privacy/log retention. Conduct assistive-technology and community usability testing, validate venues and current services, monitor errors/costs, add operational alerts, and define retention/deletion. Passing a prototype browser audit is not a claim of full WCAG compliance or production readiness.
+Review data licensing with the source providers, Avenir webfont rights, public-note handling, anonymous survey abuse protection and privacy/log retention. Conduct assistive-technology and community usability testing, validate venues and current services, monitor errors/costs, add operational alerts, and define retention/deletion. Passing an automated browser audit is not a claim of full WCAG compliance or production readiness.

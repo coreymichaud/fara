@@ -60,6 +60,7 @@ describe('crawlable pages and meaningful framework states', () => {
       '/methodology',
     );
     expect(footer.getByRole('link', { name: 'About FARA' })).toHaveAttribute('href', '/about');
+    expect(footer.getByRole('link', { name: 'Resources' })).toHaveAttribute('href', '/resources');
     expect(screen.queryByText(/hackathon/i)).not.toBeInTheDocument();
     about.unmount();
     render(<Loading />);
@@ -104,7 +105,7 @@ describe('crawlable pages and meaningful framework states', () => {
       };
     mocks.get.mockResolvedValue(base);
     const first = render(await PlanPage({ params: Promise.resolve({ id }) }));
-    expect(screen.getByText('Illustrative demo data')).toBeInTheDocument();
+    expect(screen.getByText('Illustrative test data')).toBeInTheDocument();
     expect(screen.getByText('Anonymous check-in form')).toBeInTheDocument();
     first.unmount();
     for (const budgetFeasible of [true, false]) {
@@ -152,6 +153,7 @@ describe('crawlable pages and meaningful framework states', () => {
 describe('main navigation', () => {
   it.each([
     ['/', 'Planner'],
+    ['/resources', 'Resources'],
     ['/methodology', 'Methodology'],
     ['/about', 'About'],
   ])('identifies %s as the current page', (pathname, label) => {
@@ -191,5 +193,50 @@ describe('main navigation', () => {
       expect(link).toHaveAttribute('data-active', 'false');
       expect(link).not.toHaveAttribute('aria-current');
     }
+  });
+  it('opens and closes the menu and closes it after choosing a destination or the wordmark', async () => {
+    const user = userEvent.setup();
+    render(<Header />);
+    const toggle = screen.getByRole('button', { name: 'Menu' });
+    const navigation = screen.getByRole('navigation', { name: 'Main navigation' });
+    expect(toggle).toHaveAttribute('aria-controls', navigation.id);
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(navigation).toHaveAttribute('data-open', 'false');
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(navigation).toHaveAttribute('data-open', 'true');
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await user.click(toggle);
+    const resources = within(navigation).getByRole('link', { name: 'Resources' });
+    resources.addEventListener('click', (event) => event.preventDefault());
+    await user.click(resources);
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await user.click(toggle);
+    const home = screen.getByRole('link', { name: 'FARA home' });
+    home.addEventListener('click', (event) => event.preventDefault());
+    await user.click(home);
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  });
+  it('closes an open menu with Escape and returns focus without consuming other keys', async () => {
+    const user = userEvent.setup();
+    render(<Header />);
+    const toggle = screen.getByRole('button', { name: 'Menu' });
+    const resources = within(screen.getByRole('navigation', { name: 'Main navigation' })).getByRole(
+      'link',
+      { name: 'Resources' },
+    );
+    await user.click(toggle);
+    resources.focus();
+    await user.keyboard('{ArrowDown}');
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(resources).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(toggle).toHaveFocus();
+    resources.focus();
+    await user.keyboard('{Escape}');
+    expect(resources).toHaveFocus();
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
   });
 });

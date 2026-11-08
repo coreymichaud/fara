@@ -1,12 +1,14 @@
 # FARA · Food Access Resource Allocation
 
-FARA (Food Access Resource Allocation) helps Central Florida food banks and pantry planners choose where to investigate a mobile pantry event. Planners can inspect tract-level indicators, compare locations, set a radius and capacity, record local objections, save a proposal, and collect anonymous community feedback. Scoring is deterministic; the application has no generative AI functionality. FARA is an independent DevFest/Beacon challenge prototype, not an official DataKind product.
+FARA (Food Access Resource Allocation) helps Central Florida food banks and pantry planners choose where to investigate a mobile pantry event. Planners can inspect tract-level indicators, compare locations, set a radius and capacity, record local objections, save a proposal, and collect anonymous community feedback. Scoring is deterministic; the application has no generative AI functionality. FARA is an independent tool, not an official DataKind product.
 
 The local pipeline joins **490 census tracts** in Lake, Orange, Osceola and Seminole counties, with 488 eligible for scoring and 1,694 retailer points. The data does not describe existing pantry services. See [verification](docs/VERIFICATION.md) for test results, coverage, and deployment status. Cloud deployment is pending account setup.
 
+The **Resources** page at `/resources` brings together food-program guidance, referral tools, and Central Florida organizations for nonprofit staff. The directory identifies publishers, service areas, and practical uses, and records when the links were reviewed. The [resource curation notes](docs/resources.md) record sources and maintenance guidance. These links do not add pantry locations or service-coverage data to the planning map.
+
 ![FARA desktop planning workspace](docs/screenshots/planner-desktop.png)
 
-[Phone](docs/screenshots/planner-phone.png), [tablet](docs/screenshots/planner-tablet.png), and [presentation display](docs/screenshots/planner-presentation.png) screenshots were captured in Chromium. Regenerate them with `npm run test:e2e`.
+[Phone](docs/screenshots/planner-phone.png), [tablet](docs/screenshots/planner-tablet.png), and [wide desktop](docs/screenshots/planner-wide.png) screenshots were captured in Chromium. Regenerate them with `npm run test:e2e`.
 
 ```text
 Local Beacon/public inputs ── uv + Pandas/DuckDB + spatial validation ── public/data/
@@ -52,7 +54,7 @@ references/brand/        Supplied Beacon brand guide; reference only, not in ima
 tests/                   Vitest / React Testing Library / Firestore integration
 e2e/                     Browser journey, viewport, accessibility and tile-failure tests
 scripts/                 Checks, preflight, local Docker build/deploy, smoke tests
-docs/                    Data, deployment, verification and teammate handoff
+docs/                    Data, design, deployment and verification
 ```
 
 Place the original files in `data/raw/` and the guide in `references/brand/`. The pipeline requires these exact discovered filenames:
@@ -66,7 +68,7 @@ SNAP_Retailer_Location_data.csv
 cb_2020_12_tract_500k.zip
 ```
 
-Keep the provided metadata, lookup, and notes files beside them; they support the [data audit](docs/data_audit.md). Other challenge files are inventoried but unused.
+Keep the provided metadata, lookup, and notes files beside them; they support the [data audit](docs/data_audit.md). Other supplied files are inventoried but unused.
 
 Git excludes `data/`, `references/`, generated web assets, the original build brief, environment files, credentials, local stores, caches, and machine-specific editor and assistant files. `.env.example` is the only environment file intended for Git. The committed `docs/` files describe the product, design tokens, data methods, and operating procedures. `.dockerignore` separately restricts the build context to application code and the five permitted processed assets.
 
@@ -79,7 +81,7 @@ curl --fail --location --retry 2 \
   --output data/raw/cb_2020_12_tract_500k.zip
 ```
 
-The [publication basis](docs/LICENSING.md) covers published U.S. federal statistical aggregates and Census boundaries, with attribution. It does not grant rights to redistribute LandScan rasters or proprietary fonts. If additional organizer restrictions forbid derived publication, stop deployment. Raw files must never enter Git, a Docker build context, or image layers.
+The [publication basis](docs/LICENSING.md) covers published U.S. federal statistical aggregates and Census boundaries, with attribution. It does not grant rights to redistribute LandScan rasters or proprietary fonts. If additional source restrictions forbid derived publication, stop deployment. Raw files must never enter Git, a Docker build context, or image layers.
 
 ## First launch
 
@@ -213,11 +215,11 @@ Follow **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for first-time billing, APIs
 PROJECT_ID=your-project-id \
 REGION=us-central1 \
 SERVICE_ACCOUNT=food-access-runtime@your-project-id.iam.gserviceaccount.com \
-PUBLIC_DEMO=true \
+PUBLIC_ACCESS=true \
 bash scripts/deploy-gcp.sh
 ```
 
-`PUBLIC_DEMO=true` explicitly chooses public demo access. The script validates local assets, builds Docker **locally**, tests that image, pushes to Artifact Registry, resolves its digest, and deploys that exact digest to one Cloud Run service. No Cloud Storage, BigQuery, Python API, remote source build, or GitHub data upload is involved. Deployment requires your authenticated cloud account and billed project; the checked-in script is not evidence that a live URL exists. Custom domains are outside the MVP.
+`PUBLIC_ACCESS=true` allows unauthenticated access; omit it to deploy a private service. The script validates local assets, builds Docker **locally**, tests that image, pushes to Artifact Registry, resolves its digest, and deploys that exact digest to one Cloud Run service. No Cloud Storage, BigQuery, Python API, remote source build, or GitHub data upload is involved. Deployment requires your authenticated cloud account and billed project; the checked-in script is not evidence that a live URL exists. Custom domains are outside the MVP.
 
 ## Troubleshooting
 
@@ -237,4 +239,4 @@ bash scripts/deploy-gcp.sh
 | Survey closed / duplicate browser response     | Creator can reopen it. An existing browser cookie prevents a second submission from that browser; this is a best-effort guard                                     |
 | Creator results show suppression               | Expected when n<5 or any nonzero cell<5. No breakdown is exposed until disclosure rules are satisfied                                                             |
 
-Read the [data audit](docs/data_audit.md), [dictionary](docs/data_dictionary.md), [transformations](docs/transformations.md), [methodology](docs/methodology.md), [limitations](docs/limitations.md), [judge demo](docs/demo_script.md), and [handoff checklist](docs/HANDOFF_CHECKLIST.md). No transit/travel time, actual pantry utilization, or causal impact is modeled.
+Read the [data audit](docs/data_audit.md), [dictionary](docs/data_dictionary.md), [transformations](docs/transformations.md), [methodology](docs/methodology.md), [limitations](docs/limitations.md), and [operational priorities](docs/next_steps.md). No transit/travel time, actual pantry utilization, or causal impact is modeled.

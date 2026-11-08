@@ -200,7 +200,7 @@ export function Workspace({ data }: { data: Dataset }) {
           <div className="workspace-meta">
             <span className={data.manifest.mode === 'illustrative' ? 'illustrative' : ''}>
               {data.manifest.mode === 'illustrative'
-                ? 'Illustrative demo data'
+                ? 'Illustrative test data'
                 : 'Observed public indicators'}
               <span className="meta-divider"> / </span>
               {data.manifest.geography.length} counties · {data.areas.length} tracts

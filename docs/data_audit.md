@@ -32,7 +32,7 @@ CSV counts exclude column headers; ACS observation counts also exclude the secon
 
 ## Geography, vintages, and join checks
 
-The four supplied ACS extracts span multiple challenge regions (including New York City and Salt Lake County). Florida rows in S1701 identify **Lake (75), Orange (267), Osceola (59), and Seminole (89)**: 490 tracts. The other ACS extracts contain the same Florida tract set. National USDA tables each have 84,119 tracts; the exact Florida study-area filter also yields 490. Keys are Census GEOIDs, not names. All used tract tables and downloaded 2020 geometry match exactly, with no unmatched or silently dropped tracts. Duplicate or mismatched IDs fail processing.
+The four supplied ACS extracts span multiple regions (including New York City and Salt Lake County). Florida rows in S1701 identify **Lake (75), Orange (267), Osceola (59), and Seminole (89)**: 490 tracts. The other ACS extracts contain the same Florida tract set. National USDA tables each have 84,119 tracts; the exact Florida study-area filter also yields 490. Keys are Census GEOIDs, not names. All used tract tables and downloaded 2020 geometry match exactly, with no unmatched or silently dropped tracts. Duplicate or mismatched IDs fail processing.
 
 | Published asset     | Count | Granularity / units / limitations                              |
 | ------------------- | ----: | -------------------------------------------------------------- |

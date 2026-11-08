@@ -5,6 +5,7 @@ export function Footer() {
     <footer className="site-footer">
       <span className="footer-sources">{product.sourceCredit}</span>
       <nav aria-label="Footer navigation">
+        <Link href="/resources">Resources</Link>
         <Link href="/methodology">Data & methods</Link>
         <Link href="/about">About {product.name}</Link>
       </nav>

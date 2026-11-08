@@ -8,7 +8,7 @@ BASE_URL="${1%/}"
 case "$BASE_URL" in http://*|https://*) ;; *) echo 'Expected an http(s) URL' >&2; exit 2;; esac
 TASK_TMP="$(mktemp -d)"
 trap 'rm -rf "$TASK_TMP"' EXIT
-for path in / /api/health /data/manifest.json /data/areas.json /data/tracts.geojson /methodology /about; do
+for path in / /api/health /data/manifest.json /data/areas.json /data/tracts.geojson /methodology /about /resources; do
   curl --fail --silent --show-error --retry 3 --retry-delay 2 "$BASE_URL$path" --output "$TASK_TMP/$(echo "$path" | tr '/' '_')"
 done
 node - "$TASK_TMP" <<'JS'
@@ -20,5 +20,6 @@ const tracts=JSON.parse(fs.readFileSync(`${dir}/_data_tracts.geojson`));
 const health=JSON.parse(fs.readFileSync(`${dir}/_api_health`));
 if(manifest.mode!=='observed'||manifest.schemaVersion!=='1.0'||areas.length!==manifest.areaCount||tracts.features.length!==areas.length||health.datasetVersion!==manifest.datasetVersion)throw new Error('Data endpoint mismatch');
 if(!fs.readFileSync(`${dir}/_`,'utf8').includes('Pantry planner'))throw new Error('Homepage not rendered');
-console.log(`Smoke passed: homepage, methodology, about, health, manifest, ${areas.length} areas and map geometry`);
+if(!fs.readFileSync(`${dir}/_resources`,'utf8').includes('<h1>Resources</h1>'))throw new Error('Resources page not rendered');
+console.log(`Smoke passed: homepage, methodology, about, resources, health, manifest, ${areas.length} areas and map geometry`);
 JS
