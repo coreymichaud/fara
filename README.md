@@ -18,7 +18,7 @@ Homepage screenshots: [phone](docs/screenshots/home-phone.png), [tablet](docs/sc
 
 ```text
 Local Beacon/public inputs ── uv + Pandas/DuckDB + spatial validation ── public/data/
-                                                                         │ local Docker build
+                                                                         │ Docker build (local or Cloud Build)
 Browser ── Next.js App Router / one Cloud Run container ── static map assets
                           │ server-only Admin SDK / ADC
                      Firestore Native
@@ -27,7 +27,7 @@ Browser ── Next.js App Router / one Cloud Run container ── static map as
 
 ## Prerequisites
 
-Use macOS or Linux, or **Windows with WSL2 Ubuntu**. Run all shell, uv, npm and Google Cloud commands inside WSL; enable Docker Desktop’s WSL integration and keep the checkout in the Linux filesystem. Native PowerShell deployment scripts are not provided.
+For local development, use macOS or Linux, or **Windows with WSL2 Ubuntu**. Run shell, uv and npm commands inside WSL and keep the checkout in the Linux filesystem. Local Docker workflows also need Docker Desktop's WSL integration. Deployment through [Google Cloud Console](docs/DEPLOYMENT.md) needs no local Docker, Google Cloud CLI, or Cloud Shell.
 
 | Tool             | Supported / purpose                                                                                                                                                        | Install                                                                    |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
@@ -36,8 +36,8 @@ Use macOS or Linux, or **Windows with WSL2 Ubuntu**. Run all shell, uv, npm and 
 | Python           | ≥3.12,<3.14; tested 3.12.14                                                                                                                                                | Managed by uv                                                              |
 | uv               | Tested 0.13.7; installs Python/dependencies as needed                                                                                                                      | [uv installation](https://docs.astral.sh/uv/getting-started/installation/) |
 | Git              | Source only; raw and generated data stay ignored                                                                                                                           | [Git](https://git-scm.com/downloads)                                       |
-| Docker           | Needed for production builds; optional for local JSON development. Also provides a tested emulator path without installing Java                                            | [Docker](https://docs.docker.com/get-started/get-docker/)                  |
-| Google Cloud CLI | Deployment only, with a billed project and permissions                                                                                                                     | [gcloud](https://cloud.google.com/sdk/docs/install)                        |
+| Docker           | Optional local image builds and tested Firestore Emulator path; Cloud Build provides Docker remotely for Console deployments                                               | [Docker](https://docs.docker.com/get-started/get-docker/)                  |
+| Google Cloud CLI | Optional legacy local deployment / real-cloud development; not needed for Console deployment                                                                               | [gcloud](https://cloud.google.com/sdk/docs/install)                        |
 
 The optional npm Firestore Emulator command needs a working Java runtime supported by Firebase CLI (Java 21+). The Docker emulator instructions below avoid that prerequisite.
 
@@ -60,6 +60,7 @@ references/brand/        Supplied Beacon brand guide; reference only, not in ima
 tests/                   Vitest / React Testing Library / Firestore integration
 e2e/                     Browser journey, viewport, accessibility and tile-failure tests
 scripts/                 Checks, preflight, local Docker build/deploy, smoke tests
+cloudbuild.yaml          GitHub source + private GCS assets → Artifact Registry → Cloud Run
 docs/                    Data, design, deployment and verification
 ```
 
@@ -202,7 +203,7 @@ Vitest requires **100% statements, branches, lines and functions** across author
 
 Reports: `coverage/index.html`, `coverage/coverage-summary.json`, `analysis/htmlcov/index.html`, `analysis/coverage.json`, and Playwright `test-results/` traces on failure. Format with `npm run format` and `cd analysis && uv run ruff format src tests`. Mypy remains strict for authored code; calls into untyped external nbformat are declared as that library boundary.
 
-GitHub Actions runs lint, type checks, unit tests, Python checks, and coverage using synthetic fixtures and a Firestore Emulator. Its repository token has read-only access. Production builds and browser acceptance checks run locally on the machine holding the processed data; CI does not upload datasets or publish images.
+GitHub Actions runs lint, type checks, unit tests, Python checks, and coverage using synthetic fixtures and a Firestore Emulator. Its repository token has read-only access. Browser acceptance checks run locally with processed data. The separate manual Cloud Build release trigger fetches permitted assets from private GCS and builds production; the GitHub quality workflow does not upload datasets or publish images. Cloud Build configuration tests parse the YAML and exercise its scripts using synthetic assets and isolated command stubs, without cloud access.
 
 ## Build the exact production image locally
 
@@ -215,17 +216,11 @@ The automated test starts the standalone image, checks rendered pages, health, d
 
 ## Deploy to Google Cloud
 
-Follow **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for first-time billing, APIs, Firestore, IAM and registry setup. After those user-account prerequisites, invoke:
+Follow **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for a browser-only workflow using GitHub, Cloud Build, Artifact Registry, Cloud Run, and Firestore. Upload the five processed `public/data/` files to your private bucket's `public-data/` folder using the Storage Console; keep all datasets and credentials out of GitHub.
 
-```sh
-PROJECT_ID=your-project-id \
-REGION=us-central1 \
-SERVICE_ACCOUNT=food-access-runtime@your-project-id.iam.gserviceaccount.com \
-PUBLIC_ACCESS=true \
-bash scripts/deploy-gcp.sh
-```
+Create a **manual** Cloud Build trigger using `/cloudbuild.yaml`, explicitly select `food-access-build`, and configure `_DATA_BUCKET`, `_AR_REPOSITORY`, and `_SERVICE_NAME`. Save it without running until you intend to deploy. A release downloads and validates the assets before building the existing Dockerfile, pushes a unique image tag, and deploys the pushed digest in `us-central1` using `food-access-runtime` and Firestore. The guide lists the exact scoped IAM roles and post-deployment checks. No service-account keys are needed.
 
-`PUBLIC_ACCESS=true` allows unauthenticated access; omit it to deploy a private service. The script validates local assets, builds Docker **locally**, tests that image, pushes to Artifact Registry, resolves its digest, and deploys that exact digest to one Cloud Run service. No Cloud Storage, BigQuery, Python API, remote source build, or GitHub data upload is involved. Deployment requires your authenticated cloud account and billed project; the checked-in script is not evidence that a live URL exists. Custom domains are outside the MVP.
+The trigger preserves the service's public-access policy; a new service is private by default. An authorized administrator can separately enable public access in Console for anonymous shared plans/surveys. Cloud deployment remains unverified. The legacy `scripts/deploy-gcp.sh` is an optional local-build alternative, not required by the Console path. Custom domains are outside the MVP.
 
 ## Troubleshooting
 
@@ -239,9 +234,9 @@ bash scripts/deploy-gcp.sh
 | Firestore 403 / no ADC                         | Local cloud: `gcloud auth application-default login`; production: attach the documented runtime identity. Never put Admin credentials in `NEXT_PUBLIC_` variables |
 | Basemap/tiles blocked                          | Use the automatic local Census boundary fallback and area list. Preserve attribution; allow the chosen provider in CSP                                            |
 | Port 3000/3100 busy or Next dev lock           | Stop your other Next process or use `npm run dev -- --port 3001`. Stop dev before Playwright. Emulator owns 8080; container tests choose a random loopback port   |
-| Production missing map data                    | Re-run the local pipeline/validation and local Docker build. Git checkout alone has no generated data                                                             |
+| Production missing map data                    | Check Cloud Build's GCS download/validation steps, or rebuild a local image with processed assets. Git checkout alone has no generated data                       |
 | Stale generated assets                         | Re-run the pipeline. This refreshes packaging metadata, not source vintages; check whether newer actual source data is needed                                     |
-| Cloud Run startup failure                      | Check `PORT=8080`, standalone file copies and logs using deployment-guide commands                                                                                |
+| Cloud Run startup failure                      | Check `PORT=8080`, standalone file copies, and the service's Logs tab in Console                                                                                  |
 | Survey closed / duplicate browser response     | Creator can reopen it. An existing browser cookie prevents a second submission from that browser; this is a best-effort guard                                     |
 | Creator results show suppression               | Expected when n<5 or any nonzero cell<5. No breakdown is exposed until disclosure rules are satisfied                                                             |
 

@@ -28,5 +28,5 @@ jobs:
           GOOGLE_CLOUD_PROJECT: demo-food-access
       - if: always()
         run: docker rm -f firestore
-      # Real-data production builds and browser tests run on the data-holding machine.
+      # Cloud Build separately fetches GCS assets for production releases; browser tests run locally.
       # No raw/processed datasets, notebooks, or data fixtures are uploaded as artifacts.

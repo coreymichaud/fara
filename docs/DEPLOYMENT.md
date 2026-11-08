@@ -1,216 +1,173 @@
-# One local image → Artifact Registry → Cloud Run + Firestore
+# Deploy from GitHub with Google Cloud Console
 
-Use the data-holding local checkout. A fresh GitHub checkout does **not** contain raw or generated data. This guide never uploads source data to GitHub and does not use `gcloud run deploy --source`. All commands below use Bash on macOS/Linux or WSL2. Use [README](../README.md) to install dependencies and process data first.
+This workflow needs no local Docker, `gcloud`, or Cloud Shell commands. Python/uv processing remains local. Cloud Build checks out source from GitHub, downloads five processed assets from your private bucket, validates them, builds the existing Dockerfile, pushes to Artifact Registry, and deploys the pushed digest to Cloud Run.
 
-Local processing, Next production build, linux/amd64 Docker build and container smoke checks were exercised. Cloud-account operations below require your actual project and credentials; see [VERIFICATION](VERIFICATION.md) for current live-deployment status. Do not mistake documented commands for a completed cloud deployment.
+**No cloud deployment has been performed or verified by this change.** Configure and save the trigger without running it. Its deployment step runs only when you later invoke the trigger.
 
-## 1. Choose and authenticate a project
+## 1. Record your configuration
 
-Install [gcloud](https://cloud.google.com/sdk/docs/install), Docker and Node 24 LTS. Use an existing billed project or create one in the Cloud console. Project IDs are globally unique; replace all safe placeholders consistently. Billing must be enabled by an authorized billing-account user. Cloud Run, registry storage and Firestore can incur charges; free tiers and quotas vary. Limit instances and remove resources when they are no longer needed.
+Select the intended billed project in [Google Cloud Console](https://console.cloud.google.com/). Use its **project ID**, not its display name or numeric project number.
 
-```sh
-export PROJECT_ID=your-project-id
-export REGION=us-central1
-export SERVICE_NAME=food-access
-export REPOSITORY=food-access
-export SERVICE_ACCOUNT="food-access-runtime@${PROJECT_ID}.iam.gserviceaccount.com"
+| Setting                             | Value                                                                     |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| Trigger / GitHub connection region  | `us-central1`                                                             |
+| Cloud Run region                    | `us-central1`                                                             |
+| Artifact Registry location / format | `us-central1` / Docker                                                    |
+| `_DATA_BUCKET`                      | Existing private bucket **name only**, without `gs://` or `/public-data/` |
+| `_AR_REPOSITORY`                    | Existing Docker repository ID; default `food-access`                      |
+| `_SERVICE_NAME`                     | Cloud Run service name; default `food-access`                             |
+| Build account                       | `food-access-build@PROJECT_ID.iam.gserviceaccount.com`                    |
+| Runtime account                     | `food-access-runtime@PROJECT_ID.iam.gserviceaccount.com`                  |
+| Firestore database                  | `(default)`, Standard edition, Native mode                                |
+| GitHub source                       | Your repository and release branch, normally `main`                       |
 
-gcloud auth login
-gcloud config set project "$PROJECT_ID"
-gcloud auth list --filter=status:ACTIVE --format='value(account)'
-gcloud projects describe "$PROJECT_ID" --format='value(projectId)'
-gcloud billing projects describe "$PROJECT_ID"
+`PROJECT_ID` in this guide means your actual project ID. Cloud Build supplies `$PROJECT_ID` and `$BUILD_ID`; do not add them as custom substitutions. Your actual bucket name, project/repository/service IDs, GitHub repository/branch, IAM bindings, and database configuration have not been inspected in your cloud account.
+
+The build, registry, Cloud Run, both service accounts, and Firestore must share a project for this setup. The bucket may be elsewhere if its owner grants the build account access. Cross-project runtime accounts or registries require additional IAM setup. The Dockerfile's default OpenFreeMap style is used; `NEXT_PUBLIC_MAP_STYLE` is a build-time argument, not a runtime setting.
+
+## 2. Check the bucket and GitHub contents
+
+In **Cloud Storage → Buckets → your bucket → Objects**, check these exact keys:
+
+```text
+public-data/manifest.json
+public-data/areas.json
+public-data/tracts.geojson
+public-data/counties.geojson
+public-data/retailers.geojson
 ```
 
-If you are creating a new project rather than selecting an existing billed one, authenticate first, choose a unique project ID above, and have the project/billing owner run:
+They must be directly inside `public-data/`, not `public-data/data/`. Keep the bucket private. The build fetches these five objects by name, without recursively copying the bucket. Upload all five from one successful pipeline run before invoking a build; avoid replacing them during a build.
 
-```sh
-gcloud projects create "$PROJECT_ID" --name='FARA'
-gcloud billing accounts list
-export BILLING_ACCOUNT_ID=your-billing-account-id
-gcloud billing projects link "$PROJECT_ID" --billing-account="$BILLING_ACCOUNT_ID"
-gcloud config set project "$PROJECT_ID"
-gcloud billing projects describe "$PROJECT_ID"
-```
+The existing validator runs **before Docker** with Node 24 and built-in modules. It checks schema/method/mode, publication basis, dataset version, four asset hashes, nonempty files, area counts and unique IDs, geography, coordinates, percentages, counts, and tract/area key agreement. `generatedAt` must be no more than **30 days old** and no more than **5 minutes in the future**. Docker's `npm run build` validates again. If validation fails, rerun the local Python/uv pipeline in [README](../README.md#first-launch), then replace all five objects using the Storage Console. Do not edit the manifest timestamp or disable validation. Regeneration does not update source vintages.
 
-Replace the billing-account placeholder with an account you are authorized to charge. If project creation or billing linkage is restricted by your organization, its administrator must perform that step; deploying code cannot supply those permissions.
+Only source/configuration belongs in GitHub. `.gitignore` excludes `data/`, `public/data/`, references, environment files, credentials, and caches. Check the **actual GitHub file tree**: ignoring a file does not remove an existing tracked copy. Never upload Beacon CSVs, processed assets, `.env.local`, ADC files, or service-account keys. If credentials were previously committed, remove them from history and rotate them.
 
-Choose a region supported by both [Cloud Run](https://cloud.google.com/run/docs/locations) and [Firestore](https://cloud.google.com/firestore/native/docs/locations). `us-central1` is the example for both; choose before creating the database. Your deployer needs access to this project, not just a Google login.
+`.dockerignore` independently denies everything except application/build files and exactly the five permitted data assets. It already allows the downloaded `public/data/` files. The image bundles these assets and generated MapLibre worker/license files, without raw data or bucket credentials. `/data/*` is served to anyone allowed to access the site: a private source bucket does **not** make bundled assets private. See [LICENSING](LICENSING.md) for the limited publication basis.
 
-## 2. Project-owner setup: APIs and database
+## 3. One-time project setup
 
-The project owner or a user with Service Usage Admin, database creation, service-account creation/IAM and registry administration permissions performs this initial setup. Do not give the runtime service account Owner or Editor. Cloud Build is unnecessary because the build is local.
+An authorized project administrator performs provisioning and IAM changes. Those administration privileges belong to that person, not the build/runtime accounts.
 
-```sh
-gcloud services enable \
-  run.googleapis.com artifactregistry.googleapis.com firestore.googleapis.com \
-  iam.googleapis.com serviceusage.googleapis.com \
-  --project="$PROJECT_ID"
+1. Check **Billing** is enabled for the selected project.
+2. In **APIs & Services → Library**, enable Cloud Build, Artifact Registry, Cloud Run Admin, Cloud Firestore, Identity and Access Management (IAM), Cloud Storage, Cloud Logging, and Secret Manager APIs. The GitHub connection uses Secret Manager for authorization; FARA does not read that secret.
+3. In **Artifact Registry → Repositories**, inspect your repository. If absent, create one with format **Docker**, mode **Standard**, location type **Region**, and region **us-central1**. Its ID must match `_AR_REPOSITORY`.
+4. In **Firestore → Databases**, inspect `(default)`. If absent, create a **Standard edition / Native mode** database with ID `(default)`, choose `us-central1`, and enable deletion protection where offered. Keep an existing Native database even if its location differs; location changes require migration. A named database alone is insufficient. Do not recreate a database containing plans. The app creates collections when saving a plan.
+5. In **IAM & Admin → Service Accounts → Create service account**, create `food-access-build` and `food-access-runtime` if absent. Skip broad project roles in the creation wizard and grant the scoped roles below. Leave the **Keys** tab empty. Both services use attached identities and Application Default Credentials.
 
-gcloud firestore databases list --project="$PROJECT_ID"
-```
+The Firestore Admin SDK uses IAM, not browser-client rules. The committed `firestore.rules` denies direct web-client access; do not open those rules to make server writes work.
 
-If `(default)` does not already exist, create **Standard edition, Native mode**:
+## 4. Minimum predefined execution roles
 
-```sh
-gcloud firestore databases create \
-  --database='(default)' --location="$REGION" --type=firestore-native \
-  --edition=standard --delete-protection --project="$PROJECT_ID"
+Grant these roles at the scopes shown. Custom roles can narrow individual permissions further. Do not substitute Owner, Editor, or a downloaded key.
 
-gcloud firestore databases describe --database='(default)' \
-  --project="$PROJECT_ID" --format='yaml(name,locationId,type,deleteProtectionState)'
-```
+| Principal                                                | Role ID                         | Grant on                                                                                              | Purpose                                                    |
+| -------------------------------------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `food-access-build@PROJECT_ID.iam.gserviceaccount.com`   | `roles/storage.objectViewer`    | Only the processed-data bucket                                                                        | Download objects; no writes                                |
+| Build account                                            | `roles/artifactregistry.writer` | Only the target Docker repository                                                                     | Push images/read digests; includes reader permissions      |
+| Build account                                            | `roles/run.developer`           | Project for first service creation; existing service only if it never needs to create another service | Create/update Cloud Run, without public-access IAM changes |
+| Build account                                            | `roles/iam.serviceAccountUser`  | Only `food-access-runtime` service account                                                            | Attach the runtime identity                                |
+| Build account                                            | `roles/logging.logWriter`       | Project                                                                                               | Write build logs                                           |
+| `food-access-runtime@PROJECT_ID.iam.gserviceaccount.com` | `roles/datastore.user`          | Project containing Firestore `(default)`                                                              | Read/write plans and surveys, including transactions       |
 
-The location is a consequential, effectively permanent choice for the database; a later move requires migration rather than editing the location. Do not recreate an existing database. Emulator data is separate and never migrated implicitly. The app uses `(default)`, so a named alternate database alone is insufficient. The server Admin SDK uses IAM, not public web-client security rules. The checked-in `firestore.rules` denies direct client access, but those rules do not authorize the Admin SDK.
+Apply the bucket grant under **Cloud Storage → bucket → Permissions → Grant access**, using the build account email and **Storage Object Viewer**. This predefined role reads objects throughout that bucket; use a dedicated processed-data bucket if other objects should be inaccessible. [Storage roles](https://docs.cloud.google.com/storage/docs/access-control/iam-roles).
 
-## 3. Dedicated runtime identity and deployer permissions
+Apply the registry grant under **Artifact Registry → Repositories → select repository → Permissions / Grant access**, selecting **Artifact Registry Writer** for the build account. The runtime account needs no registry-write role. [Artifact Registry access control](https://docs.cloud.google.com/artifact-registry/docs/access-control).
 
-```sh
-gcloud iam service-accounts create food-access-runtime \
-  --display-name='Food access Cloud Run runtime' --project="$PROJECT_ID"
+Apply project-level Cloud Run Developer and Logs Writer grants under **IAM & Admin → IAM → Grant access**. For an existing-service-only deployer, use that service's **Permissions** panel for Cloud Run Developer instead. Apply Service Account User under **IAM & Admin → Service Accounts → food-access-runtime → Permissions → Grant access**, with the **build account** as principal. Do not grant this on every service account. [Cloud Run deployment roles](https://docs.cloud.google.com/run/docs/deploying).
 
-gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-  --member="serviceAccount:$SERVICE_ACCOUNT" --role=roles/datastore.user
-```
+Grant **Cloud Datastore User** to the **runtime account** at project scope. This standard role includes some permissions, such as deletion, that the app does not expose; it does not administer the project. The build account needs no Firestore data role; the runtime account needs no GCS/build role. [Firestore IAM](https://docs.cloud.google.com/firestore/native/docs/security/iam).
 
-`roles/datastore.user` is the narrow standard data-read/write role needed by this implementation’s document get/list/create/update operations and Firestore transactions; it also includes some permissions (such as data deletion) not exposed by this app. A custom role can narrow that further after IAM review. It does not grant project administration. Prefer database-scoped IAM if your organization’s setup supports it; the commands here grant the standard role in this dedicated project. No storage, BigQuery, AI, or service-account-key permissions are needed at runtime.
+`cloudbuild.yaml` uses `CLOUD_LOGGING_ONLY`, so no build-log GCS bucket is required. Logs Writer authorizes this logging mode. Explicitly select the build account in the trigger: the trigger's service-account setting overrides YAML. [User-specified build accounts](https://docs.cloud.google.com/build/docs/securing-builds/configure-user-specified-service-accounts).
 
-The deployer separately needs Cloud Run Admin (`roles/run.admin`, including service IAM changes for public access), Artifact Registry Writer on the repository, and Service Account User on this specific runtime account. Initial API/repository/database/IAM creation requires additional owner-managed roles. For a separate deployer, the owner can use:
+### Human access and managed agents
 
-```sh
-export DEPLOYER_EMAIL=your-google-account@example.com
-gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-  --member="user:$DEPLOYER_EMAIL" --role=roles/run.admin
-gcloud iam service-accounts add-iam-policy-binding "$SERVICE_ACCOUNT" \
-  --member="user:$DEPLOYER_EMAIL" --role=roles/iam.serviceAccountUser \
-  --project="$PROJECT_ID"
-```
+The trigger operator needs **Cloud Build Editor** (`roles/cloudbuild.builds.editor`) on the project, **Service Account User** (`roles/iam.serviceAccountUser`) on **food-access-build**, and **Cloud Build Connection Viewer** (`roles/cloudbuild.connectionViewer`) to browse connected source. Grant **Logs Viewer** (`roles/logging.viewer`) to view Cloud Logging output. These are human permissions, separate from the attached account's roles. [Build IAM roles](https://docs.cloud.google.com/build/docs/iam-roles-permissions), [trigger identity permissions](https://docs.cloud.google.com/build/docs/cloud-build-service-account).
 
-Use Google-managed attached identity and ADC. **Do not download a service-account JSON key.** Local use of a real cloud backend can use `gcloud auth application-default login`; that is distinct from `gcloud auth login` used to deploy. Never copy ADC files into the repository or image.
+Creating the GitHub connection additionally needs **Cloud Build Connection Admin** (`roles/cloudbuild.connectionAdmin`), GitHub authorization, and permission to create/manage its Secret Manager authorization secret. Have the administrator handle that setup; do not add those administration roles to the build account.
 
-## 4. Create the Docker registry
+Keep the automatically provisioned Google service-agent bindings intact: `service-PROJECT_NUMBER@gcp-sa-cloudbuild.iam.gserviceaccount.com` uses **Cloud Build Service Agent** (`roles/cloudbuild.serviceAgent`); `service-PROJECT_NUMBER@serverless-robot-prod.iam.gserviceaccount.com` uses **Cloud Run Service Agent** (`roles/run.serviceAgent`). The former manages connected source access; the latter pulls same-project images. Console's GitHub connection setup grants its Cloud Build service agent access to its authorization secret. If missing, scope **Secret Manager Secret Accessor** (`roles/secretmanager.secretAccessor`) to that connection secret for the managed agent. Do not assign service-agent roles to either user-managed account or a human. [GitHub connection setup](https://docs.cloud.google.com/build/docs/automating-builds/github/connect-repo-github?generation=2nd-gen).
 
-Run once, unless the repository already exists:
+## 5. Connect GitHub and save a manual trigger
 
-```sh
-gcloud artifacts repositories describe "$REPOSITORY" \
-  --location="$REGION" --project="$PROJECT_ID"
-# Only if it does not exist:
-gcloud artifacts repositories create "$REPOSITORY" \
-  --repository-format=docker --location="$REGION" \
-  --description='Locally built food-access application images' --project="$PROJECT_ID"
+1. Make the source changes available on your chosen GitHub branch. In **Cloud Build → Repositories → 2nd gen**, choose **us-central1**, then **Create host connection → GitHub**. Name the connection, authorize the Cloud Build GitHub App for the intended repository, and complete Console's authorization flow. Use **Link repositories** to link that repository. No account key or personal access token belongs in the repo.
+2. In **Cloud Build → Triggers**, select **us-central1** and **Create trigger**.
+3. Name it, for example, `fara-release`. Set the event to **Manual invocation**. Choose the linked 2nd-gen repository and release branch as source. Keep the connection, repository, and trigger in `us-central1`.
+4. Under **Configuration**, choose **Cloud Build configuration file (yaml or json)** from the repository and enter `/cloudbuild.yaml` as its location.
+5. Under **Service account**, explicitly select `food-access-build@PROJECT_ID.iam.gserviceaccount.com`. Do not select the runtime, default Compute Engine, or legacy Cloud Build account.
+6. Add/override these **substitution variables**:
 
-gcloud artifacts repositories add-iam-policy-binding "$REPOSITORY" \
-  --location="$REGION" --project="$PROJECT_ID" \
-  --member="user:$DEPLOYER_EMAIL" --role=roles/artifactregistry.writer
+   | Variable         | Example                         | Replace with                            |
+   | ---------------- | ------------------------------- | --------------------------------------- |
+   | `_DATA_BUCKET`   | `your-private-processed-bucket` | Existing bucket's bare name             |
+   | `_AR_REPOSITORY` | `food-access`                   | Your `us-central1` Docker repository ID |
+   | `_SERVICE_NAME`  | `food-access`                   | Your Cloud Run service name             |
 
-gcloud auth configure-docker "${REGION}-docker.pkg.dev"
-```
+7. **Save without clicking Run.** No push event is configured, so a source commit does not invoke this deployment trigger. GitHub's separate quality workflow still runs on pushes/PRs.
 
-If the same project owner deploys, set `DEPLOYER_EMAIL` to that authenticated account. Cross-project registry access would need additional permissions and is outside this path.
+See Google's [manual-trigger instructions](https://docs.cloud.google.com/build/docs/manually-build-code-source-repos) if Console labels change. Docker and CLI steps run remotely in Cloud Build; no corresponding local tools or login are required.
 
-## 5. Rebuild and validate the local assets
+## 6. What an intentional release will do
 
-From the checkout containing the locally supplied source files:
+When you decide to deploy, first check the chosen commit's **Data-independent quality gates** GitHub Actions job is green. Both existing 100% coverage gates remain unchanged. This release pipeline validates actual assets and builds production; it does not replace the unit/integration coverage job or local browser acceptance suite.
 
-```sh
-npm ci
-cd analysis
-uv sync --locked
-uv run python src/pipeline.py
-cd ..
-npm run data:validate
-git check-ignore data/raw/SNAP_Retailer_Location_data.csv public/data/manifest.json
-git ls-files data/raw data/processed public/data
-```
+Open the saved trigger, choose **Run**, confirm the source branch/commit and substitutions, then start the build. Run one release at a time per service. In **Cloud Build → History**, follow these steps:
 
-The last command must print no tracked source/generated datasets. `.gitignore` and `.dockerignore` are independent. Docker’s allowlist permits exactly the minimized web assets, source code, package/config files and two build helpers. It does not send raw data, notebooks, reference PDFs, `.env*`, caches or credential JSON to the builder. The manifest contains hashes/provenance, not raw source contents. Publication is based on [LICENSING](LICENSING.md); stop if additional terms forbid derived assets.
+1. `fetch-processed-data`: downloads the five objects into shared `/workspace/public/data/`.
+2. `validate-data`: runs the existing validator. Missing, incompatible, stale, or hash-mismatched assets stop the build before Docker.
+3. `build-image`: uses the existing non-root standalone Dockerfile with `--platform=linux/amd64`. `npm ci`, worker preparation, validation, and the Next production build run inside Docker.
+4. `push-image`: pushes `us-central1-docker.pkg.dev/PROJECT_ID/REPOSITORY/SERVICE:BUILD_ID`. The unique build tag is recorded in the build's image artifacts.
+5. `deploy-cloud-run`: resolves and checks the pushed SHA-256 digest, then deploys `IMAGE@sha256:…`. Failed lookups or invalid digests stop deployment.
 
-The preflight rejects missing/empty/hash-mismatched files, incompatible schemas/modes, invalid coordinates/counts/percentages, geometry-key mismatches, or generation timestamps over 30 days old/in the future. Reprocessing does not imply the old 2020/2024/2025 indicators became current.
+| Cloud Run setting                   | Value                                                          |
+| ----------------------------------- | -------------------------------------------------------------- |
+| Runtime account                     | `food-access-runtime@PROJECT_ID.iam.gserviceaccount.com`       |
+| Environment                         | `GOOGLE_CLOUD_PROJECT=PROJECT_ID`, `STORAGE_ADAPTER=firestore` |
+| Container port                      | `8080`                                                         |
+| Memory / CPU                        | `1 GiB` / `1`                                                  |
+| Concurrency / timeout               | `40` / `60 seconds`                                            |
+| Service minimum / maximum instances | `0` / `3`                                                      |
 
-## 6. Build, test, push and deploy the exact local image
+The pipeline uses **service-level** limits (`--min=0`, `--max=3`) and clears older revision-level overrides. [Deployment flags](https://docs.cloud.google.com/sdk/gcloud/reference/run/deploy). Scaling limits are not spending caps; builds, storage, Firestore, and running instances can incur charges.
 
-The single repeatable entry point is:
+Deployment **replaces existing user-defined environment variables** with the two above, removing development JSON/emulator settings. If an existing service needs other production variables, add them to the configuration before release; do not upload `.env.local`. No keys, ADC files, or runtime bucket access are used. The service's public-access policy stays unchanged. A new service requires authentication by default.
 
-```sh
-PROJECT_ID="$PROJECT_ID" REGION="$REGION" \
-SERVICE_ACCOUNT="$SERVICE_ACCOUNT" SERVICE_NAME="$SERVICE_NAME" \
-REPOSITORY="$REPOSITORY" PUBLIC_ACCESS=true \
-bash scripts/deploy-gcp.sh
-```
+### Public access, if intended
 
-`PUBLIC_ACCESS=true` allows unauthenticated access to the service. Without it, the script deploys privately. An organization policy may prohibit public invokers; do not work around that policy. Use an authenticated Cloud Run proxy for verification instead.
+Anonymous public plans and surveys require a publicly accessible application. After first deployment, an authorized human with **Cloud Run Admin** (`roles/run.admin`) can open **Cloud Run → service → Security → Allow public access**, review the diff, and deploy that access change. Keep the service private if intended. This is a separate Console decision: the build account cannot change access with its roles. Follow organization policies. [Public-access instructions](https://docs.cloud.google.com/run/docs/authenticating/public).
 
-The script’s actual sequence is: validate assets → check Docker/Firestore Native → configure registry auth → `docker build --platform linux/amd64` locally → run `test-container.sh` → push → resolve repository digest → `gcloud run deploy --image=<digest>` with the dedicated account. It sets `GOOGLE_CLOUD_PROJECT` and `STORAGE_ADAPTER=firestore`; it never supplies emulator or JSON storage settings. The service uses port 8080, 1 GiB memory, 1 CPU, concurrency 40, 60-second request timeout, and 0–3 instances. Review these limits for real usage.
+Console login alone does not authenticate ordinary browser requests to a private service URL; a 403 there can be expected. The app's private creator links/cookie checks still apply when the website is public.
 
-For a local image-only proof before any push:
+## 7. Verify after deployment
 
-```sh
-docker build --platform linux/amd64 -t food-access:local .
-bash scripts/test-container.sh food-access:local
-```
+In **Cloud Run → service → Revisions**, check the ready revision's image digest against the build artifact. Inspect its runtime account, environment, and scaling settings. If traffic was pinned to an old revision, use **Manage traffic** to route to the intended ready revision. Use the service's **Logs** tab for startup/request failures.
 
-The final image has standalone Next output, `.next/static`, `public/data`, and generated `public/vendor/maplibre` modules/license. It runs as a non-root user and binds `0.0.0.0:$PORT`. Missing Firestore configuration makes writes fail closed; there is no production filesystem fallback. Static exploration still works. Google ADC is acquired at runtime from the attached identity.
+Once access is configured, use the service URL in a browser:
 
-`NEXT_PUBLIC_MAP_STYLE` is a **build-time** public variable; to change it, build using `--build-arg NEXT_PUBLIC_MAP_STYLE=https://your-approved-provider/style.json` and adjust CSP if its hosts differ. Setting it only at runtime does not rewrite the client bundle. Runtime `GOOGLE_CLOUD_PROJECT` and storage variables do not contain secrets. `.env.local` is not copied into Docker.
+1. Check the homepage, planner, Resources, About, Data & methods, map, and area selection on desktop and phone.
+2. Open `/api/health` and `/data/manifest.json`. Health reports configuration, not a successful Firestore round-trip.
+3. Save a plan and retain the separate private creator link. Open only the public link in another browser/incognito context and submit all four survey choices.
+4. Open the creator link; check the response count, small-cell suppression, and close/reopen action. A visitor must not gain creator access from a public link.
+5. After a later release, revisit the same plan. It and its responses must survive because Firestore holds them outside the container.
 
-No `gcloud run deploy --source .` is used: that remote build would upload a context governed by `.gcloudignore` and would not automatically obtain these Git-ignored local assets. Adding remote builds later requires a separately reviewed data-packaging/upload policy.
+These cloud checks remain pending. Local tests/builds cannot establish that cloud IAM, the database, or public access works.
 
-## 7. Verify the deployed service and persistence
+## 8. Troubleshooting and rollback
 
-```sh
-URL="$(gcloud run services describe "$SERVICE_NAME" --project="$PROJECT_ID" \
-  --region="$REGION" --format='value(status.url)')"
-printf '%s\n' "$URL"
-bash scripts/smoke-test.sh "$URL"
+| Failure                                     | Console check / remedy                                                                               |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Placeholder bucket / missing object         | Use the bare bucket name. Check all five exact keys, with no extra `data/` folder.                   |
+| Storage 403                                 | Bucket Permissions: Object Viewer for **food-access-build**, including cross-project buckets.        |
+| Wrong build identity                        | Edit the trigger service account; it overrides YAML.                                                 |
+| Logging / logs-bucket error                 | Logs Writer for build account; trigger uses this YAML's `CLOUD_LOGGING_ONLY`.                        |
+| Stale / hash mismatch                       | Reprocess locally using Python/uv, replace all five objects, then retry. Never bypass validation.    |
+| GitHub connection failure                   | GitHub App repository selection, connection status, managed build agent's connection-secret access.  |
+| Push / digest lookup denied                 | Writer on the exact `us-central1` Docker repository and correct substitution.                        |
+| Deploy denied / `iam.serviceAccounts.actAs` | Run Developer at the right scope; Service Account User on **runtime account** for **build account**. |
+| Image pull failure                          | Same-project registry and managed Cloud Run agent's standard role.                                   |
+| Save/survey 503                             | Native `(default)` Firestore, runtime identity, project env, runtime Datastore User; inspect logs.   |
+| Browser 403 / old version                   | Public-access policy / revision traffic; Console login alone does not authorize the URL.             |
 
-gcloud run services describe "$SERVICE_NAME" --project="$PROJECT_ID" \
-  --region="$REGION" --format='yaml(status.url,status.latestReadyRevisionName,spec.template.spec.serviceAccountName)'
-```
+To roll back, open **Cloud Run → service → Revisions → Manage traffic**, select a previous ready revision, and assign traffic to it. This rolls back code, not Firestore documents. Keep the prior image/revision until its replacement is verified. A build failure after pushing may leave an unused registry image; inspect build status before assuming deployment completed.
 
-The script smoke test verifies the homepage, planner, Resources, methodology/about, health, manifest, area data and map geometry agreement. Health reports **configuration**, not a successful Firestore round-trip. Manually prove the mutable workflow:
-
-1. Open the URL on a laptop and phone. Select a tract, change radius/capacity and compare an alternative.
-2. Save a plan. Keep its separate private creator link safe; do not put it in public documents or channels.
-3. Open only the public URL in incognito/another browser, submit all four fixed-choice answers, and verify success.
-4. Confirm `/api/plans/PLAN_ID/manage` is 403 in the visitor context. It must never return raw responses or hashes.
-5. Open the creator link, verify n increments and sparse breakdowns are withheld, then close the survey and refresh the public page.
-6. Redeploy and reopen the same public URL in another browser. The plan must survive because Firestore, not the container filesystem, holds it.
-
-For a private service, run `gcloud run services proxy "$SERVICE_NAME" --project="$PROJECT_ID" --region="$REGION" --port=8090` and point the smoke test at `http://localhost:8090`. That proxy check is authenticated and is not proof of public accessibility.
-
-## 8. Diagnose, roll back, and clean up
-
-```sh
-gcloud run services logs read "$SERVICE_NAME" --project="$PROJECT_ID" \
-  --region="$REGION" --limit=50
-gcloud run revisions list --service="$SERVICE_NAME" \
-  --project="$PROJECT_ID" --region="$REGION"
-
-# Choose an actual previous ready revision from the list; do not paste this placeholder unchanged.
-export PREVIOUS_REVISION=food-access-previous-ready-revision
-gcloud run services update-traffic "$SERVICE_NAME" \
-  --to-revisions="${PREVIOUS_REVISION}=100" --project="$PROJECT_ID" --region="$REGION"
-```
-
-A rollback changes serving image/code, not saved Firestore data. After a fix, rerun the same deploy script; it makes a new timestamped image tag and deploys its exact digest. Keep schema changes backwards compatible with saved snapshots.
-
-- **Cloud Run 403:** verify public-invoker policy/organization rules; authenticated access is distinct from public service access.
-- **Firestore 403:** verify runtime account on the active revision, the project ID, database mode and the account’s Datastore User binding. Deployer permissions do not automatically apply to the runtime.
-- **Missing ADC:** attach the service account; do not patch in a key file. Emulator variables must be absent in production.
-- **Container fails to start:** inspect the startup log, port 8080, `HOSTNAME`, standalone copy steps and manifest. `test-container.sh` should reproduce missing-file issues locally.
-- **Tile failure:** local Census boundaries/list remain available. Check network/CSP/provider terms before changing the basemap.
-- **Survey 409/429:** survey may be closed, browser already submitted, response cap reached, or per-plan minute limit triggered. These failures are visible and are not fake success.
-
-When retiring the service, export needed decision briefs first. Resource deletion is destructive. Only run these cleanup commands when you intend to remove the service/images:
-
-```sh
-gcloud run services delete "$SERVICE_NAME" --project="$PROJECT_ID" --region="$REGION"
-gcloud artifacts repositories delete "$REPOSITORY" --project="$PROJECT_ID" --location="$REGION"
-```
-
-These commands do not delete Firestore; database deletion is intentionally not automated, and deletion protection was enabled above. Review Cloud Logging retention, Firestore data retention and registry cleanup to control privacy and costs. No domain purchase, Cloud Domains or custom DNS is required.
-
-## Before real-world use
-
-Review data licensing with the source providers, Avenir webfont rights, public-note handling, anonymous survey abuse protection and privacy/log retention. Conduct assistive-technology and community usability testing, validate venues and current services, monitor errors/costs, add operational alerts, and define retention/deletion. Passing an automated browser audit is not a claim of full WCAG compliance or production readiness.
+The older `scripts/deploy-gcp.sh` remains available for maintainers choosing a local build. It is not needed here. This Console workflow never uses Cloud Run source deployment, raw-data upload, generated-data Git commits, or service-account keys.

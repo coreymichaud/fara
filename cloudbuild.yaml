@@ -1,0 +1,90 @@
+# Configure a manual GitHub trigger using this file and the same build account.
+# Trigger-level service-account selection overrides this field.
+serviceAccount: projects/$PROJECT_ID/serviceAccounts/food-access-build@$PROJECT_ID.iam.gserviceaccount.com
+timeout: 1200s
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _DATA_BUCKET: REPLACE_WITH_PRIVATE_BUCKET_NAME
+  _AR_REPOSITORY: food-access
+  _SERVICE_NAME: food-access
+
+steps:
+  - id: fetch-processed-data
+    name: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+    entrypoint: bash
+    env:
+      - DATA_BUCKET=${_DATA_BUCKET}
+      - AR_REPOSITORY=${_AR_REPOSITORY}
+      - SERVICE_NAME=${_SERVICE_NAME}
+    args:
+      - -ceu
+      - |
+        set -o pipefail
+        if [[ -z "$${DATA_BUCKET}" || "$${DATA_BUCKET}" == REPLACE_WITH_PRIVATE_BUCKET_NAME ]]; then
+          echo 'Set _DATA_BUCKET to your private bucket name, without gs:// or a path.' >&2
+          exit 1
+        fi
+        if [[ -z "$${AR_REPOSITORY}" || -z "$${SERVICE_NAME}" ]]; then
+          echo 'Set _AR_REPOSITORY and _SERVICE_NAME in the trigger substitutions.' >&2
+          exit 1
+        fi
+        mkdir -p public/data
+        # Fetch exact object names: never recurse through the bucket or copy raw inputs.
+        for asset in manifest.json areas.json tracts.geojson counties.geojson retailers.geojson; do
+          gcloud storage cp "gs://$${DATA_BUCKET}/public-data/$${asset}" public/data/ --quiet
+        done
+
+  - id: validate-data
+    name: node:24-bookworm-slim
+    entrypoint: node
+    # This validator uses only Node built-ins, so npm ci is unnecessary here.
+    args: [scripts/validate-data.mjs]
+
+  - id: build-image
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --platform=linux/amd64
+      - --tag=us-central1-docker.pkg.dev/$PROJECT_ID/${_AR_REPOSITORY}/${_SERVICE_NAME}:$BUILD_ID
+      - .
+
+  - id: push-image
+    name: gcr.io/cloud-builders/docker
+    # Push before deployment; the top-level images field runs only after all steps.
+    args:
+      - push
+      - us-central1-docker.pkg.dev/$PROJECT_ID/${_AR_REPOSITORY}/${_SERVICE_NAME}:$BUILD_ID
+
+  - id: deploy-cloud-run
+    name: gcr.io/google.com/cloudsdktool/google-cloud-cli:stable
+    entrypoint: bash
+    env:
+      - FARA_PROJECT=$PROJECT_ID
+      - FARA_SERVICE=${_SERVICE_NAME}
+      - FARA_IMAGE=us-central1-docker.pkg.dev/$PROJECT_ID/${_AR_REPOSITORY}/${_SERVICE_NAME}
+      - FARA_BUILD_ID=$BUILD_ID
+    args:
+      - -ceu
+      - |
+        set -o pipefail
+        digest="$$(gcloud artifacts docker images describe "$${FARA_IMAGE}:$${FARA_BUILD_ID}" \
+          --project="$${FARA_PROJECT}" --format='value(image_summary.digest)')"
+        if [[ ! "$${digest}" =~ ^sha256:[a-f0-9]{64}$ ]]; then
+          echo 'Artifact Registry did not return a valid image digest; refusing deployment.' >&2
+          exit 1
+        fi
+        # No public-access/IAM flags: preserve the service's access policy.
+        gcloud run deploy "$${FARA_SERVICE}" \
+          --project="$${FARA_PROJECT}" --region=us-central1 --platform=managed \
+          --image="$${FARA_IMAGE}@$${digest}" \
+          --service-account="food-access-runtime@$${FARA_PROJECT}.iam.gserviceaccount.com" \
+          --set-env-vars="GOOGLE_CLOUD_PROJECT=$${FARA_PROJECT},STORAGE_ADAPTER=firestore" \
+          --port=8080 --memory=1Gi --cpu=1 --concurrency=40 --timeout=60s \
+          --min=0 --max=3 --min-instances=default --max-instances=default \
+          --quiet
+
+# Record the already-pushed image in the build's artifact results.
+images:
+  - us-central1-docker.pkg.dev/$PROJECT_ID/${_AR_REPOSITORY}/${_SERVICE_NAME}:$BUILD_ID

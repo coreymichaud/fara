@@ -10,6 +10,7 @@
 !src/**
 !public/
 !public/data/
+# Git-ignored assets may be downloaded here by Cloud Build before docker build.
 !public/data/manifest.json
 !public/data/areas.json
 !public/data/tracts.geojson

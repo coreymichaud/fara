@@ -1,8 +1,25 @@
 # Verification results
 
-**FARA (Food Access Resource Allocation)** verified locally on **8 November 2026, America/New_York**. The checks below cover the local application and container. Cloud deployment is pending.
+**FARA (Food Access Resource Allocation)** local verification record, **8 November 2026, America/New_York**. Cloud deployment is pending. The latest deployment-configuration checks are separated from the earlier full application/container baseline below.
 
-## Checks
+## Console deployment configuration checks
+
+| Check                                                   | Result                                                                                                                                                                                                                             |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| New Cloud Build tests                                   | **20 passed**: YAML, account/logging configuration, five-object download, real validator with synthetic files, build/push/digest/deploy order, substitutions, failure stopping, literal shell arguments, and Git/Docker exclusions |
+| ESLint / Prettier / TypeScript                          | Pass                                                                                                                                                                                                                               |
+| Embedded Bash scripts                                   | `bash -n` passes                                                                                                                                                                                                                   |
+| Actual processed-asset validation                       | Pass: 490 observed tracts; dataset `5d7db3d37ab5`                                                                                                                                                                                  |
+| Next production build                                   | Pass                                                                                                                                                                                                                               |
+| Complete Vitest invocation                              | **122 passed, 2 skipped** across 15 files; Firestore integration skipped without an emulator                                                                                                                                       |
+| Latest V8 coverage gate                                 | **Failed as expected without Firestore**: statements 97.47% (771/791), branches 97.92% (520/531), functions 96.73% (267/276), lines 97.60% (694/711). Thresholds remain 100%                                                       |
+| Live Cloud Build / registry push / Cloud Run deployment | **Not run**, as requested                                                                                                                                                                                                          |
+
+The configuration tests use temporary synthetic files and isolated `gcloud`/`docker` command stubs. The actual validator runs against those files; no installed CLI, Docker engine, cloud credentials, bucket, registry, or Cloud Run API is used. They verify local command construction and failure paths, not Cloud Build's server-side schema acceptance or your IAM. `yaml` is an explicit test-only development dependency, already present transitively in the lockfile.
+
+No real local `gcloud` or Docker command was run for this change. There was no running Firestore Emulator or usable Java runtime. The missing coverage is in the unchanged Firestore adapter and its repository selection; rerun the existing coverage command with the emulator, or use the unchanged GitHub Actions quality job, to establish a current 100% result. The Python pipeline, browser journey, and container smoke checks were not rerun for this configuration-only change; their earlier results follow. No coverage settings were relaxed.
+
+## Earlier application and container baseline
 
 | Check                                               | Result                                                                                                                                                                                                                                                      |
 | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -78,17 +95,9 @@ The last recorded dependency audit reported **zero known production dependency v
 
 **The application has not been deployed to Cloud Run.** Artifact Registry push, cloud IAM/billing setup, live Firestore writes, and persistence across a Cloud Run redeploy remain unverified.
 
-The verification host has no `gcloud` installation or Application Default Credentials, and no authenticated target project or billing identity was configured. The Google CLI in the emulator image was used only to run the local Firestore Emulator.
+At the time of the full baseline, the verification host had no `gcloud` installation or Application Default Credentials, and no authenticated target project or billing identity was configured. The Google CLI in the emulator image was used only to run the local Firestore Emulator.
 
-The exact remaining account-dependent commands are in [DEPLOYMENT.md](DEPLOYMENT.md), including project/billing creation, APIs, Firestore Native location, least-privilege runtime identity, deployer permissions and registry setup. After those prerequisites:
-
-```sh
-PROJECT_ID=your-project-id REGION=us-central1 \
-SERVICE_ACCOUNT=food-access-runtime@your-project-id.iam.gserviceaccount.com \
-PUBLIC_ACCESS=true bash scripts/deploy-gcp.sh
-```
-
-That script builds from this local data-holding checkout, tests the image, pushes to Artifact Registry and deploys the exact pushed digest. The cloud steps require an authenticated deployer account. Local preflight, build, and smoke checks passed; the cloud steps have not been run. Project/billing/deploy flag syntax was checked against the official [project creation](https://docs.cloud.google.com/sdk/gcloud/reference/projects/create), [billing linkage](https://docs.cloud.google.com/sdk/gcloud/reference/billing/projects/link), [Firestore creation](https://docs.cloud.google.com/sdk/gcloud/reference/firestore/databases/create), and [Cloud Run deployment](https://docs.cloud.google.com/sdk/gcloud/reference/run/deploy) references.
+The current remaining setup is documented in [DEPLOYMENT.md](DEPLOYMENT.md): Console-only APIs, Native Firestore, separate build/runtime identities, scoped IAM, a GitHub connection, and a manual trigger using root `cloudbuild.yaml`. The trigger fetches the five permitted processed assets from private GCS, validates them, builds the existing image remotely, pushes it, and deploys its digest. Save the trigger without running until deployment is intended. No live cloud configuration or public URL is claimed. Role and flag choices were checked against the official sources linked in that guide.
 
 The Resources page links to official operating guidance, referral tools, and Central Florida organizations. Its source-selection and review process is documented in [resources.md](resources.md).
 
