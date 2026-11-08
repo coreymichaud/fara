@@ -1,0 +1,26 @@
+# Allowlist: raw inputs, secrets, notebooks and all other local files never enter context.
+**
+!package.json
+!package-lock.json
+!tsconfig.json
+!next-env.d.ts
+!next.config.ts
+!postcss.config.mjs
+!src/
+!src/**
+!public/
+!public/data/
+!public/data/manifest.json
+!public/data/areas.json
+!public/data/tracts.geojson
+!public/data/counties.geojson
+!public/data/retailers.geojson
+!scripts/
+!scripts/validate-data.mjs
+!scripts/prepare-map.mjs
+!Dockerfile
+.env*
+**/*credentials*.json
+**/*service-account*.json
+data/raw/
+data/processed/
