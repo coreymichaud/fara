@@ -12,13 +12,13 @@ The goal is to support better site-selection conversations, not to predict atten
 
 ## Project at a glance
 
-| | |
-| --- | --- |
-| **Study area** | Lake, Orange, Osceola, and Seminole counties, Florida |
-| **Geographic unit** | 490 Census tracts; 488 eligible for scoring |
-| **Retailer data** | 1,694 SNAP-authorized retailer locations after quality checks |
-| **Core methods** | Data integration, geospatial processing, feature normalization, weighted scoring, scenario analysis |
-| **Deliverable** | Interactive decision-support application with reproducible data preparation |
+|                     |                                                                                                     |
+| ------------------- | --------------------------------------------------------------------------------------------------- |
+| **Study area**      | Lake, Orange, Osceola, and Seminole counties, Florida                                               |
+| **Geographic unit** | 490 Census tracts; 488 eligible for scoring                                                         |
+| **Retailer data**   | 1,694 SNAP-authorized retailer locations after quality checks                                       |
+| **Core methods**    | Data integration, geospatial processing, feature normalization, weighted scoring, scenario analysis |
+| **Deliverable**     | Interactive decision-support application with reproducible data preparation                         |
 
 ## The problem
 
@@ -32,12 +32,12 @@ FARA addresses three questions:
 
 ## Data and preparation
 
-| Source | Variables used | Role in the analysis |
-| --- | --- | --- |
-| [American Community Survey, 2020–2024](https://www.census.gov/programs-surveys/acs) | Poverty rate, 90% margin of error, SNAP participation | Socioeconomic indicators; SNAP participation is context, not a scoring input |
-| [USDA retail-access data](https://www.ers.usda.gov/data-products/food-access-research-atlas/) | Share of residents more than one straight-line mile from a SNAP-authorized retailer; 2020 population and occupied housing units | Retail-access measure and household counts |
-| [2020 Census tract boundaries](https://www2.census.gov/geo/tiger/GENZ2020/shp/cb_2020_12_tract_500k.zip) | Tract polygons | Spatial reference, representative points, and map layers |
-| USDA SNAP retailer snapshot | Store coordinates, names, and types | Retailer map layer and geographic quality checks |
+| Source                                                                                                   | Variables used                                                                                                                  | Role in the analysis                                                         |
+| -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| [American Community Survey, 2020–2024](https://www.census.gov/programs-surveys/acs)                      | Poverty rate, 90% margin of error, SNAP participation                                                                           | Socioeconomic indicators; SNAP participation is context, not a scoring input |
+| [USDA retail-access data](https://www.ers.usda.gov/data-products/food-access-research-atlas/)            | Share of residents more than one straight-line mile from a SNAP-authorized retailer; 2020 population and occupied housing units | Retail-access measure and household counts                                   |
+| [2020 Census tract boundaries](https://www2.census.gov/geo/tiger/GENZ2020/shp/cb_2020_12_tract_500k.zip) | Tract polygons                                                                                                                  | Spatial reference, representative points, and map layers                     |
+| USDA SNAP retailer snapshot                                                                              | Store coordinates, names, and types                                                                                             | Retailer map layer and geographic quality checks                             |
 
 The Python pipeline in [`analysis/src/pipeline.py`](analysis/src/pipeline.py) performs the following work:
 
