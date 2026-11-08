@@ -181,7 +181,7 @@ function trace(): { command: string; args: string[] }[] {
 describe('Cloud Build release configuration', () => {
   it('uses a dedicated account, Cloud Logging, and serial failure-stopping steps', () => {
     expect(config.serviceAccount).toBe(
-      'projects/$PROJECT_ID/serviceAccounts/food-access-build@$PROJECT_ID.iam.gserviceaccount.com',
+      'projects/$PROJECT_ID/serviceAccounts/food-access-builder@$PROJECT_ID.iam.gserviceaccount.com',
     );
     expect(config.options.logging).toBe('CLOUD_LOGGING_ONLY');
     expect(config.steps.map((step) => step.id)).toEqual([
