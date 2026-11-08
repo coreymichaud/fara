@@ -5,10 +5,10 @@ import { useRef, useState } from 'react';
 import { product } from '@/config/product';
 
 const navigation = [
-  { href: '/', label: 'Planner' },
   { href: '/resources', label: 'Resources' },
   { href: '/methodology', label: 'Methodology' },
   { href: '/about', label: 'About' },
+  { href: '/planner', label: 'Go to planner' },
 ];
 
 export function Header() {
@@ -30,6 +30,7 @@ export function Header() {
         href="/"
         className="wordmark"
         aria-label={`${product.name} home`}
+        aria-current={pathname === '/' ? 'page' : undefined}
         onClick={() => setMenuOpen(false)}
       >
         {product.name}
@@ -50,8 +51,11 @@ export function Header() {
           <Link
             key={href}
             href={href}
+            className={href === '/planner' ? 'nav-planner' : undefined}
             aria-current={pathname === href ? 'page' : undefined}
-            data-active={pathname === href || (href === '/' && pathname.startsWith('/plans/'))}
+            data-active={
+              pathname === href || (href === '/planner' && pathname.startsWith('/plans/'))
+            }
             onClick={() => setMenuOpen(false)}
           >
             {label}

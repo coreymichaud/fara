@@ -168,7 +168,7 @@ gcloud run services describe "$SERVICE_NAME" --project="$PROJECT_ID" \
   --region="$REGION" --format='yaml(status.url,status.latestReadyRevisionName,spec.template.spec.serviceAccountName)'
 ```
 
-The script smoke test verifies homepage, methodology/about, health, manifest, a representative data file and map geometry agreement. Health reports **configuration**, not a successful Firestore round-trip. Manually prove the mutable workflow:
+The script smoke test verifies the homepage, planner, Resources, methodology/about, health, manifest, area data and map geometry agreement. Health reports **configuration**, not a successful Firestore round-trip. Manually prove the mutable workflow:
 
 1. Open the URL on a laptop and phone. Select a tract, change radius/capacity and compare an alternative.
 2. Save a plan. Keep its separate private creator link safe; do not put it in public documents or channels.

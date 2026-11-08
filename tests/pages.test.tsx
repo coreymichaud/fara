@@ -6,6 +6,7 @@ import { dataset, scenario, areas } from './fixtures';
 import { evaluate, scoreAreas } from '@/lib/domain/planner';
 const mocks = vi.hoisted(() => ({
   load: vi.fn(),
+  boundaries: vi.fn(),
   get: vi.fn(),
   pathname: vi.fn(() => '/'),
   notFound: vi.fn(() => {
@@ -13,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   }),
 }));
 vi.mock('@/lib/data/load', () => ({ loadDataset: mocks.load }));
+vi.mock('@/lib/data/study-map', () => ({ loadStudyMap: mocks.boundaries }));
 vi.mock('@/lib/storage', () => ({ getRepository: () => ({ get: mocks.get }) }));
 vi.mock('next/navigation', () => ({ notFound: mocks.notFound, usePathname: mocks.pathname }));
 vi.mock('@/features/planner/workspace', () => ({ Workspace: () => <div>Planning workspace</div> }));
@@ -23,6 +25,7 @@ vi.mock('@/features/survey/creator-results', () => ({
   CreatorResults: () => <div>Private results</div>,
 }));
 import Home from '@/app/page';
+import Planner from '@/app/planner/page';
 import About from '@/app/about/page';
 import Methodology from '@/app/methodology/page';
 import Loading from '@/app/loading';
@@ -40,9 +43,45 @@ beforeEach(() => {
 });
 
 describe('crawlable pages and meaningful framework states', () => {
-  it('renders the working landing page and source methodology', async () => {
+  it('connects the homepage to the planner and source methodology using published data', async () => {
     mocks.load.mockResolvedValue(dataset);
-    render(await Home());
+    mocks.boundaries.mockResolvedValue([{ id: '12095', path: 'M0,0 L10,0 L0,10Z' }]);
+    const home = render(await Home());
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Put your next pantryon the map.',
+    );
+    for (const link of screen.getAllByRole('link', { name: 'Go to planner' })) {
+      expect(link).toHaveAttribute('href', '/planner');
+    }
+    expect(screen.getByRole('link', { name: 'See how it works' })).toHaveAttribute(
+      'href',
+      '#how-it-works',
+    );
+    expect(screen.getByRole('heading', { name: /Room for the data/ })).toHaveAttribute(
+      'id',
+      'workflow-title',
+    );
+    expect(screen.getByText('3 Census tracts · 0 SNAP retailer locations')).toBeInTheDocument();
+    expect(screen.getByText('Illustrative test data')).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', { name: /Census boundaries/ }).querySelectorAll('path'),
+    ).toHaveLength(1);
+    expect(screen.getByRole('list', { name: 'Counties in the study area' })).toHaveTextContent(
+      'LakeCountyOrangeCounty',
+    );
+    for (const href of ['/resources', '/methodology', '/about']) {
+      expect(home.container.querySelector(`.home-library a[href="${href}"]`)).toBeInTheDocument();
+    }
+    home.unmount();
+    mocks.load.mockResolvedValue({
+      ...dataset,
+      manifest: { ...dataset.manifest, mode: 'observed' },
+    });
+    const observed = render(await Home());
+    expect(screen.getByText('Study area preview · 2020 Census boundaries')).toBeInTheDocument();
+    expect(screen.queryByText('Illustrative test data')).not.toBeInTheDocument();
+    observed.unmount();
+    render(await Planner());
     expect(screen.getByText('Planning workspace')).toBeInTheDocument();
     render(await Methodology());
     expect(screen.getByRole('heading', { level: 1, name: 'Data & methods' })).toBeInTheDocument();
@@ -64,11 +103,11 @@ describe('crawlable pages and meaningful framework states', () => {
     expect(screen.queryByText(/hackathon/i)).not.toBeInTheDocument();
     about.unmount();
     render(<Loading />);
-    expect(screen.getByText('Loading the planning workspace…')).toBeInTheDocument();
+    expect(screen.getByText('Loading FARA…')).toBeInTheDocument();
     render(<NotFound />);
     expect(screen.getByRole('link', { name: 'Return to the planner' })).toHaveAttribute(
       'href',
-      '/',
+      '/planner',
     );
     const reset = vi.fn();
     render(<ErrorPage reset={reset} />);
@@ -151,8 +190,15 @@ describe('crawlable pages and meaningful framework states', () => {
 });
 
 describe('main navigation', () => {
+  it('returns to the homepage from the planner and identifies the home wordmark', () => {
+    mocks.pathname.mockReturnValue('/');
+    render(<Header />);
+    expect(screen.getByRole('link', { name: 'FARA home' })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: 'FARA home' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Go to planner' })).toHaveAttribute('href', '/planner');
+  });
   it.each([
-    ['/', 'Planner'],
+    ['/planner', 'Go to planner'],
     ['/resources', 'Resources'],
     ['/methodology', 'Methodology'],
     ['/about', 'About'],
@@ -179,7 +225,10 @@ describe('main navigation', () => {
       mocks.pathname.mockReturnValue(pathname);
       render(<Header />);
       const nav = within(screen.getByRole('navigation', { name: 'Main navigation' }));
-      expect(nav.getByRole('link', { name: 'Planner' })).toHaveAttribute('data-active', 'true');
+      expect(nav.getByRole('link', { name: 'Go to planner' })).toHaveAttribute(
+        'data-active',
+        'true',
+      );
       for (const link of nav.getAllByRole('link')) {
         expect(link).not.toHaveAttribute('aria-current');
       }

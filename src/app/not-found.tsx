@@ -6,7 +6,7 @@ export default function NotFound() {
       <p>
         Check that you have the full share link, or return to the planner to start a new proposal.
       </p>
-      <Link href="/">Return to the planner</Link>
+      <Link href="/planner">Return to the planner</Link>
     </main>
   );
 }

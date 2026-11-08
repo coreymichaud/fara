@@ -1,6 +1,13 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
+import { Button } from '@/components/ui/button';
 import { product } from '@/config/product';
 import { Footer } from '@/components/footer';
+export const metadata: Metadata = {
+  title: `About | ${product.name}`,
+  description:
+    'How FARA helps Central Florida food banks and pantry operators plan mobile distribution events.',
+};
 export default function About() {
   return (
     <>
@@ -45,7 +52,9 @@ export default function About() {
             generative AI or machine learning. AI assistance was used during software development.
           </p>
         </section>
-        <Link href="/">Open the planner</Link>
+        <Button asChild>
+          <Link href="/planner">Go to planner</Link>
+        </Button>
       </main>
       <Footer />
     </>

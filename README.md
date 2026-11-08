@@ -6,9 +6,13 @@ The local pipeline joins **490 census tracts** in Lake, Orange, Osceola and Semi
 
 The **Resources** page at `/resources` brings together food-program guidance, referral tools, and Central Florida organizations for nonprofit staff. The directory identifies publishers, service areas, and practical uses, and records when the links were reviewed. The [resource curation notes](docs/resources.md) record sources and maintenance guidance. These links do not add pantry locations or service-coverage data to the planning map.
 
+The homepage introduces FARA and links to the planner, Resources, Data & methods, and About. The working map lives at `/planner`; the FARA wordmark always returns to `/`.
+
+![FARA homepage](docs/screenshots/home-desktop.png)
+
 ![FARA desktop planning workspace](docs/screenshots/planner-desktop.png)
 
-[Phone](docs/screenshots/planner-phone.png), [tablet](docs/screenshots/planner-tablet.png), and [wide desktop](docs/screenshots/planner-wide.png) screenshots were captured in Chromium. Regenerate them with `npm run test:e2e`.
+Homepage screenshots: [phone](docs/screenshots/home-phone.png), [tablet](docs/screenshots/home-tablet.png), and [wide desktop](docs/screenshots/home-wide.png). Planner screenshots: [phone](docs/screenshots/planner-phone.png), [tablet](docs/screenshots/planner-tablet.png), and [wide desktop](docs/screenshots/planner-wide.png). Regenerate these Chromium captures with `npm run test:e2e`.
 
 ```text
 Local Beacon/public inputs ── uv + Pandas/DuckDB + spatial validation ── public/data/
@@ -98,7 +102,7 @@ npm run data:validate
 npm run dev
 ```
 
-Open **http://localhost:3000**. Expected output includes `Validated 490 observed tracts` during validation and Next’s `Ready` message at startup. The local map uses official polygons and an external no-key OpenFreeMap basemap. If tiles fail, the labeled local boundary fallback remains available. Use the area list and coordinate fields for keyboard access.
+Open **http://localhost:3000**, then choose **Go to planner**, or visit **http://localhost:3000/planner** directly. Expected output includes `Validated 490 observed tracts` during validation and Next’s `Ready` message at startup. The local map uses official polygons and an external no-key OpenFreeMap basemap. If tiles fail, the labeled local boundary fallback remains available. Use the area list and coordinate fields for keyboard access.
 
 In **Pantry planner**, choose a row under **Suggested areas**, review **Area details**, enter the proposal in **Event settings**, and use **Compare locations** to consider alternatives. **Show event overlay** turns the proposed marker and radius on or off; it does not show existing pantry coverage, which is unknown. The legend, selected-area summary, and event assumptions sit below the map. On phones, switch between **Areas / Map / Plan**, or use **View area details** beneath the selected map area.
 

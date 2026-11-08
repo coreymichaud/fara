@@ -7,7 +7,7 @@ test('explore → scenario → compare → challenge → persistent share → su
   browser,
 }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.goto('/');
+  await page.goto('/planner');
   await expect(page.getByRole('heading', { name: 'Pantry planner' })).toBeVisible();
   await expect(page.locator('.site-marker')).toBeVisible();
   await page.getByRole('checkbox', { name: 'Show event overlay' }).uncheck();
@@ -99,7 +99,7 @@ test('responsive layouts, visible brand styling, accessibility and screenshots',
     ['wide', 1920, 1080],
   ] as const) {
     await page.setViewportSize({ width, height });
-    await page.goto('/');
+    await page.goto('/planner');
     await expect(page.locator('.candidate-main').first()).toBeAttached();
     await expect(page.locator('.maplibregl-canvas')).toBeVisible();
     await expect
@@ -169,12 +169,11 @@ test('responsive layouts, visible brand styling, accessibility and screenshots',
     }
   }
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.goto('/');
+  await page.goto('/planner');
   const navigation = page.getByRole('navigation', { name: 'Main navigation' });
-  await expect(navigation.getByRole('link', { name: 'Planner', exact: true })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
+  await expect(
+    navigation.getByRole('link', { name: 'Go to planner', exact: true }),
+  ).toHaveAttribute('aria-current', 'page');
   await expect(
     navigation.getByRole('link', { name: 'About', exact: true }).locator('svg'),
   ).toHaveCount(0);
@@ -229,7 +228,7 @@ test('responsive layouts, visible brand styling, accessibility and screenshots',
 test('an unavailable basemap has a working local boundary fallback', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.route('https://tiles.openfreemap.org/**', (route) => route.abort());
-  await page.goto('/');
+  await page.goto('/planner');
   await expect(page.locator('.fallback-map')).toBeVisible();
   await expect(page.locator('.fallback-map path')).toHaveCount(490);
   await expect(page.locator('.fallback-map ellipse')).toHaveCount(1);
@@ -251,6 +250,83 @@ test('an unavailable basemap has a working local boundary fallback', async ({ pa
     await expect(page.getByRole('button', { name, exact: true })).toBeInViewport({ ratio: 1 });
   await expect(page.locator('.area-heading h2')).toBeInViewport({ ratio: 1 });
   await expect(page.getByRole('button', { name: 'Save & share this plan' })).toBeEnabled();
+});
+
+test('homepage introduces FARA and connects the planner and reference pages', async ({
+  page,
+}, testInfo) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await mkdir('docs/screenshots', { recursive: true });
+  for (const [name, width, height] of [
+    ['phone', 390, 844],
+    ['tablet', 820, 1180],
+    ['desktop', 1440, 1080],
+    ['wide', 1920, 1080],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+      /Put your next pantry.*on the map/,
+    );
+    await expect(page.getByRole('img', { name: /Census boundaries/ }).locator('path')).toHaveCount(
+      4,
+    );
+    await expect(page.locator('figcaption')).toContainText(
+      '490 Census tracts · 1,694 SNAP retailer locations',
+    );
+    const plannerLink = page.locator('.hero-actions').getByRole('link', { name: 'Go to planner' });
+    const bounds = await plannerLink.boundingBox();
+    expect(bounds!.height).toBeGreaterThanOrEqual(44);
+    expect(await plannerLink.evaluate((link) => getComputedStyle(link).backgroundColor)).toBe(
+      'rgb(247, 145, 34)',
+    );
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    if (width === 390 || width === 1440) {
+      expect(
+        (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze())
+          .violations,
+      ).toEqual([]);
+    }
+    await page.screenshot({ path: `docs/screenshots/home-${name}.png`, fullPage: true });
+    await page.getByRole('link', { name: 'See how it works' }).click();
+    await expect(page.getByRole('heading', { name: /Room for the data/ })).toBeInViewport();
+    for (const [href, heading] of [
+      ['/resources', 'Resources'],
+      ['/methodology', 'Data & methods'],
+      ['/about', 'About FARA'],
+    ]) {
+      await page.locator(`.home-library-links a[href="${href}"]`).click();
+      await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+      if (width === 390 || width === 1440) {
+        expect(
+          (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze())
+            .violations,
+        ).toEqual([]);
+      }
+      await page.screenshot({
+        path: testInfo.outputPath(`${href.slice(1)}-${name}.png`),
+        fullPage: true,
+      });
+      await page.getByRole('link', { name: 'FARA home', exact: true }).click();
+      await expect(page).toHaveURL(/\/$/);
+    }
+    await plannerLink.click();
+    await expect(page).toHaveURL(/\/planner$/);
+    await expect(page.getByRole('heading', { name: 'Pantry planner' })).toBeVisible();
+    await page.getByRole('link', { name: 'FARA home', exact: true }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Put your next pantry/);
+  }
+  await page.keyboard.press('Tab');
+  await page.getByRole('link', { name: 'Skip to content' }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/#main$/);
+  expect(errors).toEqual([]);
 });
 
 test('nonprofit resources are reachable, readable and usable on desktop and phones', async ({

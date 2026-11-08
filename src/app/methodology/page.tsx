@@ -1,6 +1,14 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
+import { Button } from '@/components/ui/button';
+import { product } from '@/config/product';
 import { Footer } from '@/components/footer';
 import { loadDataset } from '@/lib/data/load';
+export const metadata: Metadata = {
+  title: `Data & methods | ${product.name}`,
+  description:
+    'Sources, calculations, uncertainty, and privacy practices behind the Central Florida pantry planning map.',
+};
 export default async function Methodology() {
   const { manifest } = await loadDataset();
   return (
@@ -140,7 +148,9 @@ export default async function Methodology() {
             nonzero cell is under 5. Anonymous responses cannot guarantee uniqueness.
           </p>
         </section>
-        <Link href="/">Back to the planner</Link>
+        <Button asChild>
+          <Link href="/planner">Go to planner</Link>
+        </Button>
       </main>
       <Footer />
     </>
