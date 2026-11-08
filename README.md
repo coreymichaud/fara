@@ -102,6 +102,8 @@ The full walkthrough—including the two service accounts, IAM roles, bucket lay
 
 The app uses Next.js, TypeScript, React, MapLibre, and Firestore. The data pipeline lives in `analysis/`; the planning calculations live in `src/lib/domain/`.
 
+The planner's shared proposal state and save flow live in `src/features/planner/workspace.tsx`. Its area explorer, map, evidence, event settings, and location comparison are separate components in the same directory. The homepage SVG lives in `src/features/home/study-atlas.tsx`. Styles are grouped by feature in `src/app/styles/`, imported through `globals.css` with shared breakpoint overrides last. Browser tests are organized into home, reference, planner, and sharing journeys in `e2e/`.
+
 For the fast checks:
 
 ```bash

@@ -41,22 +41,37 @@ export default function About() {
           </div>
         </section>
         <section className="about-local" aria-labelledby="local-heading">
-          <h2 id="local-heading">What needs a local check</h2>
           <div>
-            <ul className="local-checks" aria-label="Checks to make locally">
-              <li>Venue permission</li>
-              <li>Safety</li>
-              <li>Accessibility</li>
-              <li>Current pantry services</li>
-              <li>Community demand</li>
-            </ul>
+            <h2 id="local-heading">What needs a local check</h2>
             <p>Public indicators cannot confirm any of these.</p>
-            <p>
-              The map uses straight-line distances and tract representative points. It does not
-              predict attendance, travel time, or people served. A saved proposal is not a confirmed
-              event or a promise of food availability.
-            </p>
           </div>
+          <dl className="local-checks" aria-label="Checks to make locally">
+            <div>
+              <dt>Venue permission</dt>
+              <dd>Confirm that the proposed site can host an event.</dd>
+            </div>
+            <div>
+              <dt>Safety</dt>
+              <dd>Review site conditions with the people running the event.</dd>
+            </div>
+            <div>
+              <dt>Accessibility</dt>
+              <dd>Check how people will reach and use the site.</dd>
+            </div>
+            <div>
+              <dt>Current pantry services</dt>
+              <dd>Confirm nearby services and their current schedules.</dd>
+            </div>
+            <div>
+              <dt>Community demand</dt>
+              <dd>Ask local partners and community members whether the proposal fits.</dd>
+            </div>
+          </dl>
+          <p className="local-check-note">
+            The map uses straight-line distances and tract representative points. It does not
+            predict attendance, travel time, or people served. A saved proposal is not a confirmed
+            event or a promise of food availability.
+          </p>
         </section>
         <div className="about-background">
           <section>

@@ -1,0 +1,302 @@
+.workspace {
+  max-width: 1840px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 16px 24px 0;
+}
+.workspace-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 12px;
+}
+.workspace-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  gap: 3px;
+  font-size: var(--secondary);
+  color: var(--gray-500);
+}
+.workspace-meta a {
+  min-height: 32px;
+  align-content: center;
+}
+.meta-divider {
+  color: var(--muted-blue);
+  margin: 0 6px;
+}
+.eyebrow {
+  color: var(--gray-500);
+  font-size: var(--secondary);
+  margin-bottom: 12px;
+}
+.illustrative {
+  background: #fff1d9;
+  border: 2px solid #8b520b;
+  padding: 10px 14px;
+  color: var(--ink);
+}
+.workspace-grid {
+  display: grid;
+  grid-template-columns: 280px minmax(340px, 1fr) 400px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--surface);
+  height: max(480px, calc(100dvh - 224px));
+}
+.analysis-rail {
+  min-width: 0;
+  padding: 24px 18px;
+  overflow-y: auto;
+  background: #edf3f7;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  scrollbar-gutter: stable;
+}
+.rail-heading h2 {
+  font-size: var(--h3);
+  letter-spacing: -0.5px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--ink);
+  margin-bottom: 22px;
+  font-size: var(--secondary);
+}
+.field > span {
+  color: var(--gray-500);
+  font-size: var(--secondary);
+}
+.field input,
+.field select,
+.field textarea,
+.availability,
+.saved-link-field input {
+  border: 1px solid var(--gray-300);
+  border-radius: 5px;
+  background: white;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: var(--ink);
+  width: 100%;
+  font-size: var(--body);
+}
+.field textarea {
+  resize: vertical;
+}
+.field select,
+.availability {
+  appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23385981' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 14px center;
+  background-size: 16px;
+  background-repeat: no-repeat;
+}
+.analysis-rail .field {
+  margin: 0;
+}
+.index-settings {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--gray-300);
+}
+.index-settings summary {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  list-style: none;
+}
+.index-settings summary::after {
+  content: '+';
+  margin-left: auto;
+  font-size: 24px;
+}
+.index-settings[open] summary::after {
+  content: '−';
+}
+.index-settings p,
+.index-settings a {
+  font-size: var(--secondary);
+  line-height: 1.6;
+}
+.index-settings p {
+  color: var(--gray-500);
+  margin-bottom: 16px;
+}
+.index-settings a {
+  display: block;
+  margin-top: 12px;
+}
+.range-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--secondary);
+}
+.range-label strong {
+  color: var(--blue);
+  font-family: var(--font-mono);
+}
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.section-heading h3 {
+  font-size: var(--body);
+  letter-spacing: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-heading > span {
+  color: var(--gray-500);
+  font-size: var(--secondary);
+  white-space: nowrap;
+}
+.availability {
+  font-size: var(--secondary);
+}
+.rail-note,
+.rail-bottom,
+.empty-state {
+  font-size: var(--secondary);
+  line-height: 1.6;
+  color: var(--gray-500);
+}
+.rail-note {
+  margin-top: -8px;
+}
+.candidate-list {
+  list-style: none;
+  margin: 0 -18px;
+  padding: 0;
+}
+.candidate-list li {
+  border-top: 1px solid var(--gray-300);
+  border-left: 3px solid transparent;
+  padding: 6px 12px 4px;
+}
+.candidate-list li:last-child {
+  border-bottom: 1px solid var(--gray-300);
+}
+.candidate-list li:hover {
+  background: #e7e9e4;
+}
+.candidate-list li.selected {
+  border-left-color: var(--orange);
+  background: white;
+}
+.candidate-main {
+  display: grid;
+  grid-template-columns: 23px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  width: 100%;
+  text-align: left;
+  color: var(--ink);
+  padding: 12px 2px 4px;
+}
+.candidate-rank {
+  font: var(--secondary)/1.5 var(--font-mono);
+  color: var(--gray-500);
+  align-self: start;
+  margin-top: 4px;
+}
+.candidate-main strong {
+  display: block;
+  font-size: var(--body);
+}
+.candidate-main small {
+  display: block;
+  color: var(--gray-500);
+  font-size: var(--secondary);
+  margin-top: 3px;
+}
+.candidate-value {
+  font: 500 var(--h3)/1.1 var(--font-heading);
+  text-align: right;
+}
+.candidate-value small {
+  font: var(--secondary)/1.5 var(--font-body);
+}
+.candidate-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-left: 33px;
+}
+.candidate-meta > span {
+  font-size: var(--secondary);
+  color: var(--gray-500);
+}
+.icon-button {
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  min-height: 44px;
+  min-width: 44px;
+  padding: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+.icon-button:hover {
+  background: #e5edf2;
+}
+.shortlist {
+  border-top: 1px solid var(--gray-300);
+  padding-top: 18px;
+}
+.shortlist-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--secondary);
+}
+.shortlist-row > button:first-child {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: var(--blue);
+  flex: 1;
+  min-height: 44px;
+  font-size: var(--secondary);
+}
+.rail-bottom {
+  margin-top: auto;
+  border-top: 1px solid var(--gray-300);
+  padding-top: 18px;
+  display: flex;
+  align-items: start;
+  gap: 10px;
+}
+.rail-bottom svg {
+  margin-top: 4px;
+}
+.challenge-history {
+  font-size: var(--secondary);
+}
+.challenge-history > div {
+  margin-bottom: 16px;
+}
+.challenge-history button {
+  border: 0;
+  background: none;
+  color: var(--blue);
+  text-decoration: underline;
+  min-height: 44px;
+}

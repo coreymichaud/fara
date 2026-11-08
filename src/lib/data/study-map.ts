@@ -24,18 +24,25 @@ export async function loadStudyMap() {
   const data = collection.parse(
     JSON.parse(await readFile(join(process.cwd(), 'public/data/counties.geojson'), 'utf8')),
   );
-  return data.features.map(({ properties, geometry }) => ({
-    id: properties.id,
-    path: (geometry.type === 'Polygon' ? geometry.coordinates : geometry.coordinates.flat())
-      .map(
-        (ring) =>
-          ring
-            .map(
-              ([longitude, latitude], index) =>
-                `${index === 0 ? 'M' : 'L'}${((longitude + 82.05) * 560).toFixed(2)},${((29.36 - latitude) * 560).toFixed(2)}`,
-            )
-            .join(' ') + 'Z',
-      )
-      .join(' '),
-  }));
+  return data.features.map(({ properties, geometry }) => {
+    const polygons = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates;
+    const project = (rings: [number, number][][]) =>
+      rings
+        .map(
+          (ring) =>
+            ring
+              .map(
+                ([longitude, latitude], index) =>
+                  `${index === 0 ? 'M' : 'L'}${((longitude + 82.05) * 560).toFixed(2)},${((29.36 - latitude) * 560).toFixed(2)}`,
+              )
+              .join(' ') + 'Z',
+        )
+        .join(' ');
+    return {
+      id: properties.id,
+      path: project(polygons.flat()),
+      // Outline counties separately so small lake holes do not acquire heavy borders.
+      outline: project(polygons.map((polygon) => polygon[0])),
+    };
+  });
 }

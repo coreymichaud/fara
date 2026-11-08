@@ -3,32 +3,16 @@ import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import * as Tabs from '@radix-ui/react-tabs';
 import * as Switch from '@radix-ui/react-switch';
-import {
-  ArrowDown,
-  ArrowRight,
-  ArrowUp,
-  Check,
-  Flag,
-  Info,
-  Layers,
-  MapPin,
-  Plus,
-  Save,
-  Star,
-  X,
-} from 'lucide-react';
+import { ArrowRight, Info, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/footer';
-import { MapView } from '@/features/map/map-view';
 import { evaluate, initialScenario, rankCandidates, scoreAreas } from '@/lib/domain/planner';
-import {
-  reasons,
-  scenarioSchema,
-  type Dataset,
-  type Decision,
-  type Scenario,
-} from '@/lib/domain/schema';
-import { EvidenceChart } from './evidence-chart';
+import { scenarioSchema, type Dataset, type Decision, type Scenario } from '@/lib/domain/schema';
+import { AreaExplorer } from './area-explorer';
+import { AreaDetails } from './area-details';
+import { EventSettings } from './event-settings';
+import { LocationComparison } from './location-comparison';
+import { PlanningMap } from './planning-map';
 import { SavedPlanLinks } from './saved-plan-links';
 
 export function Workspace({ data }: { data: Dataset }) {
@@ -37,11 +21,8 @@ export function Workspace({ data }: { data: Dataset }) {
     const top = rankCandidates(scoreAreas(data.areas, 50), start)[0];
     return top ? { ...start, candidateId: top.area.id, coordinates: top.area.coordinates } : start;
   });
-  const [availability, setAvailability] = useState('comparable');
   const [tab, setTab] = useState('evidence');
   const [mobile, setMobile] = useState('map');
-  const [showProposal, setShowProposal] = useState(true);
-  const [retailers, setRetailers] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [saved, setSaved] = useState<{ publicUrl: string; manageUrl: string } | null>(null);
@@ -121,19 +102,6 @@ export function Workspace({ data }: { data: Dataset }) {
     [list[index], list[index + direction]] = [list[index + direction], list[index]];
     update({ shortlist: list });
   };
-  const list =
-    availability === 'missing'
-      ? scored
-          .filter(
-            (a) =>
-              (scenario.county === 'all' || a.county === scenario.county) && a.priority === null,
-          )
-          .map((area) => ({
-            area,
-            result: evaluate(scored, { ...scenario, coordinates: area.coordinates }),
-          }))
-      : ranked.slice(0, 5);
-  const shortlist = scenario.shortlist.map((id) => scored.find((a) => a.id === id)!);
   const sensitivity = useMemo(
     () =>
       [1, 2.5, 5].map((radius) => ({
@@ -183,7 +151,6 @@ export function Workspace({ data }: { data: Dataset }) {
       setSaving(false);
     }
   }
-  const pct = (v: number | null) => (v === null ? 'Not available' : `${v.toFixed(1)}%`);
   return (
     <>
       <main id="main" className="workspace">
@@ -208,263 +175,26 @@ export function Workspace({ data }: { data: Dataset }) {
           ))}
         </div>
         <div className="workspace-grid" data-mobile={mobile}>
-          <aside className="analysis-rail" aria-label="Area explorer">
-            <div className="rail-heading">
-              <h2>Suggested areas</h2>
-            </div>
-            <label className="field">
-              Study area
-              <select
-                value={scenario.county}
-                onChange={(e) => {
-                  const county = e.target.value;
-                  const next =
-                    ranked.find((r) => county === 'all' || r.area.county === county)?.area ??
-                    scored.find((a) => a.county === county && a.priority !== null);
-                  update({
-                    county,
-                    ...(next ? { candidateId: next.id, coordinates: next.coordinates } : {}),
-                  });
-                }}
-              >
-                <option value="all">All four counties</option>
-                {data.manifest.geography.map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </select>
-            </label>
-            <details className="index-settings">
-              <summary>
-                <Layers size={15} /> Priority index weights
-              </summary>
-              <p>
-                Higher poverty and a larger share living over 1 mile from a SNAP retailer increase
-                relative priority. SNAP participation is context only.
-              </p>
-              <label className="range-label" htmlFor="weight">
-                <span>Poverty</span>
-                <strong>{scenario.povertyWeight}%</strong>
-              </label>
-              <input
-                id="weight"
-                type="range"
-                min="0"
-                max="100"
-                step="5"
-                value={scenario.povertyWeight}
-                onChange={(e) => update({ povertyWeight: Number(e.target.value) })}
-              />
-              <div className="range-label">
-                <span>Retail distance</span>
-                <strong>{100 - scenario.povertyWeight}%</strong>
-              </div>
-              <Link href="/methodology">How the index works</Link>
-            </details>
-            <div className="section-heading">
-              <h3>Candidates</h3>
-              <span>{ranked.length} eligible</span>
-            </div>
-            <label className="sr-only" htmlFor="availability">
-              Data availability
-            </label>
-            <select
-              id="availability"
-              className="availability"
-              value={availability}
-              onChange={(e) => setAvailability(e.target.value)}
-            >
-              <option value="comparable">Comparable indicators</option>
-              <option value="missing">Missing indicators</option>
-            </select>
-            <p className="rail-note">
-              Ordered by planning value for your radius and capacity. Candidate areas are not
-              confirmed venues.
-            </p>
-            <ol className="candidate-list">
-              {list.map(({ area, result: potential }, i) => (
-                <li key={area.id} className={area.id === selected.id ? 'selected' : ''}>
-                  <button
-                    className="candidate-main"
-                    onClick={() => select(area.id)}
-                    aria-pressed={area.id === selected.id}
-                  >
-                    <span className="candidate-rank">{String(i + 1).padStart(2, '0')}</span>
-                    <span>
-                      <strong>{area.label.replace('Census ', '')}</strong>
-                      <small>{area.county} County</small>
-                    </span>
-                    <span className="candidate-value">
-                      {area.priority === null ? '—' : potential.planningValue.toFixed(0)}
-                      <small>plan value</small>
-                    </span>
-                  </button>
-                  <div className="candidate-meta">
-                    <span>Tract points in radius: {potential.areaCount}</span>
-                    <button
-                      className="icon-button"
-                      aria-label={`Shortlist ${area.label}`}
-                      onClick={() => decision(area.id, 'shortlisted')}
-                      disabled={scenario.shortlist.includes(area.id)}
-                    >
-                      {scenario.shortlist.includes(area.id) ? (
-                        <Check size={15} />
-                      ) : (
-                        <Plus size={15} />
-                      )}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ol>
-            {list.length === 0 && (
-              <p className="empty-state">
-                No areas match this filter. Try another county or restore a challenged candidate.
-              </p>
-            )}
-            {shortlist.length > 0 && (
-              <section className="shortlist">
-                <div className="section-heading">
-                  <h3>
-                    <Star size={14} /> Your shortlist
-                  </h3>
-                  <span>{shortlist.length}/10</span>
-                </div>
-                {shortlist.map((a, i) => (
-                  <div className="shortlist-row" key={a.id}>
-                    <button onClick={() => select(a.id)}>
-                      {i + 1}. {a.label.replace('Census ', '')}
-                    </button>
-                    <button
-                      className="icon-button"
-                      disabled={i === 0}
-                      aria-label={`Move ${a.label} up`}
-                      onClick={() => reorder(i, -1)}
-                    >
-                      <ArrowUp size={14} />
-                    </button>
-                    <button
-                      className="icon-button"
-                      disabled={i === shortlist.length - 1}
-                      aria-label={`Move ${a.label} down`}
-                      onClick={() => reorder(i, 1)}
-                    >
-                      <ArrowDown size={14} />
-                    </button>
-                  </div>
-                ))}
-              </section>
-            )}
-            {scenario.decisions.some((d) => d.status !== 'shortlisted') && (
-              <details className="challenge-history">
-                <summary>
-                  Challenged candidates (
-                  {scenario.decisions.filter((d) => d.status !== 'shortlisted').length})
-                </summary>
-                {scenario.decisions
-                  .filter((d) => d.status !== 'shortlisted')
-                  .map((d) => (
-                    <div key={d.id}>
-                      <span>
-                        {scored.find((a) => a.id === d.id)?.label}: {d.reason ?? d.status}
-                      </span>
-                      <button
-                        onClick={() =>
-                          update({ decisions: scenario.decisions.filter((v) => v.id !== d.id) })
-                        }
-                      >
-                        Restore
-                      </button>
-                    </div>
-                  ))}
-              </details>
-            )}
-            <div className="rail-bottom">
-              <Info size={15} />
-              <span>
-                Relative priority is a planning signal, not a probability of food insecurity.
-              </span>
-            </div>
-          </aside>
-          <section className="map-workspace" aria-label="Planning map">
-            <div className="map-toolbar">
-              <span>
-                <MapPin size={16} /> Study map
-              </span>
-              <label className="overlay-toggle">
-                <input
-                  type="checkbox"
-                  checked={showProposal}
-                  onChange={(e) => setShowProposal(e.target.checked)}
-                />
-                Show event overlay
-              </label>
-            </div>
-            <div className="map-stage">
-              <MapView
-                areas={scored}
-                scenario={scenario}
-                included={result.areaIds}
-                showProposal={showProposal}
-                showRetailers={retailers}
-                onSelect={(id) => select(id, false)}
-                onMove={(coordinates) => update({ coordinates })}
-              />
-            </div>
-            <div className="map-legend">
-              <div>
-                <strong>Planning priority</strong>
-                <span>
-                  Lower <i />
-                  <i />
-                  <i />
-                  <i /> Higher
-                </span>
-              </div>
-              <span className="legend-missing">
-                <b />
-                Insufficient data
-              </span>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={retailers}
-                  onChange={(e) => setRetailers(e.target.checked)}
-                />{' '}
-                SNAP retailer points
-              </label>
-            </div>
-            <div className="selected-area-summary" aria-label="Selected map area">
-              <div>
-                <span>Selected area</span>
-                <strong>
-                  {selected.label.replace('Census ', '')} · {selected.county} County
-                </strong>
-              </div>
-              <Button variant="secondary" className="mobile-area-details" onClick={showDetails}>
-                View area details
-              </Button>
-            </div>
-            <dl className="map-summary" aria-label="Event assumptions">
-              <div>
-                <dt>Straight-line radius</dt>
-                <dd>
-                  {scenario.radius.toFixed(1)} <span>mi</span>
-                </dd>
-              </div>
-              <div>
-                <dt>Household slots</dt>
-                <dd>{scenario.capacity.toLocaleString()}</dd>
-              </div>
-              <div>
-                <dt>Tract points in radius</dt>
-                <dd>{result.areaCount}</dd>
-              </div>
-            </dl>
-            <div className="map-context">
-              <p>Existing pantry locations are unavailable.</p>
-              <p>Capacity is entered by the planner, not predicted attendance.</p>
-            </div>
-          </section>
+          <AreaExplorer
+            data={data}
+            scenario={scenario}
+            scored={scored}
+            selected={selected}
+            ranked={ranked}
+            update={update}
+            select={select}
+            decision={decision}
+            reorder={reorder}
+          />
+          <PlanningMap
+            scenario={scenario}
+            scored={scored}
+            selected={selected}
+            result={result}
+            update={update}
+            select={select}
+            showDetails={showDetails}
+          />
           <aside className="plan-panel" aria-label="Evidence and plan">
             <Tabs.Root
               ref={detailViewport}
@@ -478,384 +208,38 @@ export function Workspace({ data }: { data: Dataset }) {
                 <Tabs.Trigger value="compare">Compare locations</Tabs.Trigger>
               </Tabs.List>
               <Tabs.Content value="evidence" className="panel-content">
-                <div className="eyebrow">Selected census tract</div>
-                <div className="area-heading">
-                  <div>
-                    <h2>{selected.label.replace('Census ', '')}</h2>
-                    <p>{selected.county} County, Florida</p>
-                  </div>
-                  <span className="priority-badge">
-                    {selected.priority === null ? '—' : selected.priority.toFixed(0)}
-                    <small>priority / 100</small>
-                  </span>
-                </div>
-                <p className="evidence-lead">
-                  {selected.priority === null
-                    ? 'Some indicators are missing or this tract has no occupied households. It is excluded from recommendations.'
-                    : `${pct(selected.poverty)} of residents with determined poverty status are below the poverty threshold. ${pct(selected.lowAccess)} of the 2020 population lived more than 1 straight-line mile from a 2025 SNAP retailer.`}
-                </p>
-                <EvidenceChart area={selected} areas={data.areas} />
-                <dl className="indicator-list">
-                  <div>
-                    <dt>
-                      Poverty rate{' '}
-                      <small>
-                        ACS 2020–2024 · 90% MOE{' '}
-                        {selected.povertyMoe === null
-                          ? 'unavailable'
-                          : `±${selected.povertyMoe.toFixed(1)} pp`}
-                      </small>
-                    </dt>
-                    <dd>{pct(selected.poverty)}</dd>
-                  </div>
-                  <div>
-                    <dt>
-                      Over 1 mile from a SNAP retailer{' '}
-                      <small>USDA SRAM · 2025 retail / 2020 population</small>
-                    </dt>
-                    <dd>{pct(selected.lowAccess)}</dd>
-                  </div>
-                  <div>
-                    <dt>
-                      Households receiving SNAP <small>ACS 2020–2024 · context, not scored</small>
-                    </dt>
-                    <dd>{pct(selected.snap)}</dd>
-                  </div>
-                </dl>
-                <div className="insight-note">
-                  <Info size={16} />
-                  <p>
-                    Higher index values suggest an area to investigate. A tract point does not
-                    establish a suitable venue.
-                  </p>
-                </div>
-                <div className="section-heading">
-                  <h3>Local review</h3>
-                  <Flag size={16} />
-                </div>
-                <p className="fine-print">
-                  Decisions stay with the saved plan. Don’t enter personal or sensitive information.
-                </p>
-                <div className="challenge-actions">
-                  <Button
-                    variant="secondary"
-                    onClick={() => decision(selected.id, 'shortlisted')}
-                    disabled={scenario.shortlist.includes(selected.id)}
-                  >
-                    <Star size={15} />
-                    {scenario.shortlist.includes(selected.id) ? 'Shortlisted' : 'Shortlist'}
-                  </Button>
-                  <Button variant="ghost" onClick={() => decision(selected.id, 'dismissed')}>
-                    <X size={15} />
-                    Dismiss
-                  </Button>
-                </div>
-                <label className="field">
-                  Flag as unsuitable
-                  <select
-                    value={
-                      scenario.decisions.find((d) => d.id === selected.id && d.status === 'flagged')
-                        ?.reason ?? ''
-                    }
-                    onChange={(e) => {
-                      if (e.target.value)
-                        decision(selected.id, 'flagged', e.target.value as Decision['reason']);
-                    }}
-                  >
-                    <option value="">Choose a reason…</option>
-                    {reasons.map((r) => (
-                      <option key={r}>{r}</option>
-                    ))}
-                  </select>
-                </label>
-                <Button
-                  className="full-width"
-                  onClick={() => {
+                <AreaDetails
+                  selected={selected}
+                  areas={data.areas}
+                  scenario={scenario}
+                  decision={decision}
+                  onPlan={() => {
                     openTab('plan');
                     openSection('plan');
                   }}
-                  disabled={selected.priority === null}
-                >
-                  Plan a pop-up here <ArrowRight size={16} />
-                </Button>
+                />
               </Tabs.Content>
               <Tabs.Content value="plan" className="panel-content">
-                <div className="eyebrow">Proposed event</div>
-                <h2>Event settings</h2>
-                <p className="panel-intro">
-                  {selected.label} · {selected.county} County
-                </p>
-                <label className="field">
-                  Plan title
-                  <input
-                    maxLength={80}
-                    value={scenario.title}
-                    onChange={(e) => update({ title: e.target.value })}
-                  />
-                </label>
-                <label className="range-label" htmlFor="radius">
-                  <span>Reach radius</span>
-                  <strong>{scenario.radius.toFixed(1)} mi</strong>
-                </label>
-                <input
-                  id="radius"
-                  type="range"
-                  min="0.5"
-                  max="10"
-                  step="0.5"
-                  value={scenario.radius}
-                  onChange={(e) => update({ radius: Number(e.target.value) })}
+                <EventSettings
+                  selected={selected}
+                  scenario={scenario}
+                  result={result}
+                  update={update}
+                  onCompare={() => openTab('compare')}
                 />
-                <p className="fine-print">
-                  Straight-line proximity. No road, transit, or walking times.
-                </p>
-                <label className="field">
-                  Event capacity · household slots
-                  <input
-                    type="number"
-                    min="1"
-                    max="5000"
-                    value={scenario.capacity}
-                    onChange={(e) => update({ capacity: Number(e.target.value) })}
-                  />
-                </label>
-                <div className="field-row">
-                  <label className="field">
-                    Longitude
-                    <input
-                      type="number"
-                      step="0.000001"
-                      min="-83"
-                      max="-80"
-                      value={scenario.coordinates[0]}
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        if (v >= -83 && v <= -80)
-                          update({ coordinates: [v, scenario.coordinates[1]] });
-                      }}
-                    />
-                  </label>
-                  <label className="field">
-                    Latitude
-                    <input
-                      type="number"
-                      step="0.000001"
-                      min="27"
-                      max="30"
-                      value={scenario.coordinates[1]}
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        if (v >= 27 && v <= 30)
-                          update({ coordinates: [scenario.coordinates[0], v] });
-                      }}
-                    />
-                  </label>
-                </div>
-                <label className="field">
-                  Operating day
-                  <select
-                    value={scenario.day}
-                    onChange={(e) => update({ day: e.target.value as Scenario['day'] })}
-                  >
-                    {[
-                      'Monday',
-                      'Tuesday',
-                      'Wednesday',
-                      'Thursday',
-                      'Friday',
-                      'Saturday',
-                      'Sunday',
-                    ].map((d) => (
-                      <option key={d}>{d}</option>
-                    ))}
-                  </select>
-                </label>
-                <div className="field-row">
-                  <label className="field">
-                    Start · local time
-                    <input
-                      type="time"
-                      value={scenario.start}
-                      onChange={(e) => update({ start: e.target.value })}
-                    />
-                  </label>
-                  <label className="field">
-                    End · local time
-                    <input
-                      type="time"
-                      value={scenario.end}
-                      onChange={(e) => update({ end: e.target.value })}
-                    />
-                  </label>
-                </div>
-                <p className="fine-print">
-                  America/New_York. Hours describe the proposal and survey; they do not change
-                  modeled attendance.
-                </p>
-                <details className="optional-cost">
-                  <summary>Optional event cost & budget</summary>
-                  <div className="field-row">
-                    <label className="field">
-                      Cost per event · USD
-                      <input
-                        type="number"
-                        min="0"
-                        value={scenario.cost ?? ''}
-                        placeholder="Your estimate"
-                        onChange={(e) =>
-                          update({ cost: e.target.value === '' ? null : Number(e.target.value) })
-                        }
-                      />
-                    </label>
-                    <label className="field">
-                      Available budget · USD
-                      <input
-                        type="number"
-                        min="0"
-                        value={scenario.budget ?? ''}
-                        placeholder="Your budget"
-                        onChange={(e) =>
-                          update({ budget: e.target.value === '' ? null : Number(e.target.value) })
-                        }
-                      />
-                    </label>
-                  </div>
-                  {result.budgetFeasible !== null && (
-                    <p className={result.budgetFeasible ? 'success-text' : 'error-text'}>
-                      {result.budgetFeasible
-                        ? 'Within the entered budget.'
-                        : 'Above the entered budget. Revise the event before proceeding.'}
-                    </p>
-                  )}
-                </details>
-                <label className="field">
-                  Operator note <span>Public · no personal details</span>
-                  <textarea
-                    maxLength={300}
-                    value={scenario.note}
-                    onChange={(e) => update({ note: e.target.value })}
-                    placeholder="What should your collaborators verify?"
-                    rows={2}
-                  />
-                </label>
-                <Button
-                  variant="secondary"
-                  className="full-width"
-                  onClick={() => openTab('compare')}
-                >
-                  Compare locations <ArrowRight size={16} />
-                </Button>
               </Tabs.Content>
               <Tabs.Content value="compare" className="panel-content">
-                <div className="eyebrow">Location comparison</div>
-                <h2>Compare locations</h2>
-                <p className="panel-intro">
-                  Current pantry service coverage is unknown. These are proposed-site scenarios, not
-                  before-and-after results.
-                </p>
-                <div className="comparison-current">
-                  <span>Current selection</span>
-                  <strong>{selected.label}</strong>
-                  <dl>
-                    <div>
-                      <dt>Tract points in radius</dt>
-                      <dd>{result.areaCount}</dd>
-                    </div>
-                    <div>
-                      <dt>
-                        Planning value{' '}
-                        <abbr title="Capacity ceiling × household-weighted mean priority / 100. Abstract index units, not people served.">
-                          ⓘ
-                        </abbr>
-                      </dt>
-                      <dd>{result.planningValue.toFixed(1)}</dd>
-                    </div>
-                    <div>
-                      <dt>Households in entire included tracts</dt>
-                      <dd>≈{result.householdsInTracts.toLocaleString()}</dd>
-                    </div>
-                    <div>
-                      <dt>Capacity ceiling · household slots</dt>
-                      <dd>{result.capacityCeiling.toLocaleString()}</dd>
-                    </div>
-                  </dl>
-                  <p className="fine-print">
-                    Whole-tract 2020 household totals assigned to representative points. Not a count
-                    of households inside the circle or expected recipients.
-                  </p>
-                </div>
-                <label className="field">
-                  Add up to two alternatives
-                  <select
-                    value=""
-                    disabled={scenario.comparisons.length >= 2}
-                    onChange={(e) => {
-                      if (e.target.value)
-                        update({ comparisons: [...scenario.comparisons, e.target.value] });
-                    }}
-                  >
-                    <option value="">Choose a ranked candidate…</option>
-                    {ranked
-                      .filter(
-                        (r) =>
-                          r.area.id !== selected.id && !scenario.comparisons.includes(r.area.id),
-                      )
-                      .slice(0, 20)
-                      .map((r) => (
-                        <option value={r.area.id} key={r.area.id}>
-                          {r.area.label} · {r.area.county}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-                {scenario.comparisons.map((id) => {
-                  const a = scored.find((v) => v.id === id)!;
-                  const alt = evaluate(scored, { ...scenario, coordinates: a.coordinates });
-                  return (
-                    <div className="alternative" key={id}>
-                      <div>
-                        <strong>{a.label}</strong>
-                        <span>
-                          {alt.areaCount} tracts · {alt.planningValue.toFixed(1)} planning value
-                        </span>
-                      </div>
-                      <button
-                        className="icon-button"
-                        aria-label={`Remove comparison ${a.label}`}
-                        onClick={() =>
-                          update({ comparisons: scenario.comparisons.filter((v) => v !== id) })
-                        }
-                      >
-                        <X size={16} />
-                      </button>
-                      <button onClick={() => select(id)}>
-                        Use this site <ArrowRight size={14} />
-                      </button>
-                    </div>
-                  );
-                })}
-                <details className="sensitivity">
-                  <summary>Radius sensitivity</summary>
-                  <p>
-                    The top candidate may change as the catchment changes. This is model
-                    sensitivity, not statistical confidence.
-                  </p>
-                  {sensitivity.map((s) => (
-                    <div key={s.radius}>
-                      {s.radius} mi{' '}
-                      <span>
-                        {scored.find((a) => a.id === s.top)?.label ?? 'No eligible candidate'}
-                      </span>
-                    </div>
-                  ))}
-                  <p>
-                    At 25/75 poverty/access weights: {weightSensitivity[0]}. At 75/25:{' '}
-                    {weightSensitivity[1]}.
-                  </p>
-                </details>
-                <Link className="method-link" href="/methodology">
-                  Read the full method <ArrowRight size={14} />
-                </Link>
+                <LocationComparison
+                  selected={selected}
+                  scored={scored}
+                  ranked={ranked}
+                  scenario={scenario}
+                  result={result}
+                  sensitivity={sensitivity}
+                  weightSensitivity={weightSensitivity}
+                  update={update}
+                  select={select}
+                />
               </Tabs.Content>
             </Tabs.Root>
             <section className="save-section">

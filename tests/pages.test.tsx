@@ -47,7 +47,9 @@ beforeEach(() => {
 describe('crawlable pages and meaningful framework states', () => {
   it('connects the homepage to the planner and source methodology using published data', async () => {
     mocks.load.mockResolvedValue(dataset);
-    mocks.boundaries.mockResolvedValue([{ id: '12095', path: 'M0,0 L10,0 L0,10Z' }]);
+    mocks.boundaries.mockResolvedValue([
+      { id: '12095', path: 'M0,0 L10,0 L0,10Z', outline: 'M0,0 L10,0 L0,10Z' },
+    ]);
     const home = render(await Home());
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       'Put your next pantryon the map.',
@@ -62,7 +64,7 @@ describe('crawlable pages and meaningful framework states', () => {
     );
     expect(screen.getByText('3 Census tracts · Illustrative test data')).toBeInTheDocument();
     expect(
-      screen.getByRole('img', { name: /Census boundaries/ }).querySelectorAll('path'),
+      screen.getByRole('img', { name: /Census boundaries/ }).querySelectorAll('.atlas-land'),
     ).toHaveLength(1);
     expect(screen.getByRole('list', { name: 'Counties in the study area' })).toHaveTextContent(
       'LakeOrange',
@@ -110,6 +112,20 @@ describe('crawlable pages and meaningful framework states', () => {
     const about = render(<About />);
     expect(screen.getByRole('heading', { level: 1, name: 'About FARA' })).toBeInTheDocument();
     expect(screen.getByText(/not an official DataKind/)).toBeInTheDocument();
+    const localChecks = screen.getByLabelText('Checks to make locally');
+    expect(
+      within(localChecks)
+        .getAllByRole('term')
+        .map((term) => term.textContent),
+    ).toEqual([
+      'Venue permission',
+      'Safety',
+      'Accessibility',
+      'Current pantry services',
+      'Community demand',
+    ]);
+    expect(within(localChecks).getAllByRole('definition')).toHaveLength(5);
+    expect(screen.getByText('Public indicators cannot confirm any of these.')).toBeVisible();
     const footer = within(screen.getByRole('contentinfo'));
     expect(footer.getByText('Plan with your community.')).toBeInTheDocument();
     expect(footer.getByRole('link', { name: 'Data & Methods' })).toHaveAttribute(

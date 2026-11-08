@@ -26,8 +26,8 @@ it('projects Polygon and MultiPolygon boundaries, retaining inner rings and disc
   const result = await loadStudyMap();
   const path = 'M0.00,0.00 L560.00,0.00 L560.00,560.00 L0.00,0.00Z';
   expect(result).toEqual([
-    { id: '12095', path: `${path} ${path}` },
-    { id: '12095', path: `${path} ${path}` },
+    { id: '12095', path: `${path} ${path}`, outline: path },
+    { id: '12095', path: `${path} ${path}`, outline: `${path} ${path}` },
   ]);
   expect(read).toHaveBeenCalledWith(
     expect.stringContaining('/public/data/counties.geojson'),
