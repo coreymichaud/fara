@@ -1,6 +1,5 @@
 # Configure a manual GitHub trigger using this file and the same build account.
 # Trigger-level service-account selection overrides this field.
-serviceAccount: projects/$PROJECT_ID/serviceAccounts/food-access-build@$PROJECT_ID.iam.gserviceaccount.com
 timeout: 1200s
 options:
   logging: CLOUD_LOGGING_ONLY
