@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { ArrowUpRight } from 'lucide-react';
 import { Footer } from '@/components/footer';
+import { PageContents } from '@/components/page-contents';
 import { product } from '@/config/product';
-import { resourceSections, resourcesReviewedOn } from '@/config/resources';
+import { resourceSections } from '@/config/resources';
 
 export const metadata: Metadata = {
   title: `Resources | ${product.name}`,
@@ -15,32 +16,21 @@ export default function Resources() {
     <>
       <main id="main" className="editorial-page resources-page">
         <header className="editorial-heading">
-          <div>
-            <p className="eyebrow">For nonprofit teams</p>
-            <h1>Resources</h1>
-          </div>
-          <p className="page-lead">
-            Practical guidance for running a food program, making a thoughtful referral, and finding
-            other organizations working nearby.
-          </p>
+          <h1>Resources</h1>
         </header>
         <div className="resources-layout">
-          <nav className="resource-topics" aria-label="Resource topics">
-            <p className="eyebrow">On this page</p>
-            {resourceSections.map((section) => (
-              <a key={section.id} href={`#${section.id}`}>
-                {section.title}
-              </a>
-            ))}
-          </nav>
+          <PageContents
+            className="resource-topics"
+            label="Resource topics"
+            items={resourceSections.map((section) => ({ id: section.id, label: section.title }))}
+          />
           <div className="resource-sections">
-            <p className="resources-reviewed">
-              Links reviewed <time dateTime={resourcesReviewedOn}>November 7, 2026</time>. Provider
-              websites open in a new tab.
-            </p>
-            {resourceSections.map((section) => (
+            {resourceSections.map((section, index) => (
               <section className="resource-section" key={section.id} aria-labelledby={section.id}>
-                <div className="resource-section-heading">
+                <div className="reference-section-heading">
+                  <span className="section-number" aria-hidden="true">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
                   <h2 id={section.id}>{section.title}</h2>
                   <p>{section.summary}</p>
                 </div>
@@ -54,7 +44,7 @@ export default function Resources() {
                       <div className="resource-description">
                         <h3>
                           <a href={resource.href} target="_blank" rel="noopener noreferrer">
-                            {resource.title}
+                            <span>{resource.title}</span>
                             <ArrowUpRight size={18} aria-hidden="true" />
                             <span className="sr-only"> (opens in a new tab)</span>
                           </a>

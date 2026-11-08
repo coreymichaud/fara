@@ -23,6 +23,8 @@ const state = vi.hoisted(() => ({
   styleLoaded: true,
   position: { lng: -81.41, lat: 28.52 },
   popup: vi.fn(),
+  popupNode: null as HTMLElement | null,
+  popupOffset: vi.fn(),
 }));
 vi.mock('maplibre-gl', () => ({
   setWorkerUrl: vi.fn(),
@@ -82,9 +84,17 @@ vi.mock('maplibre-gl', () => ({
     }
     setDOMContent(node: Node) {
       state.popup(node.textContent);
+      state.popupNode = node as HTMLElement;
       return this;
     }
     addTo() {
+      return this;
+    }
+    getElement() {
+      return { offsetWidth: 264, offsetHeight: 54 };
+    }
+    setOffset(value: [number, number]) {
+      state.popupOffset(value);
       return this;
     }
     remove() {}
@@ -138,6 +148,8 @@ function setup(overrides: Partial<MapProps> = {}) {
   state.throw = false;
   state.styleLoaded = true;
   state.popup.mockClear();
+  state.popupNode = null;
+  state.popupOffset.mockClear();
   vi.stubGlobal(
     'ResizeObserver',
     class {
@@ -162,11 +174,51 @@ function setup(overrides: Partial<MapProps> = {}) {
 }
 function emit(map: MapStub, name: string, value: unknown = {}) {
   act(() => {
-    map.events[name](value as never);
+    map.events[name]({ point: { x: 200, y: 200 }, ...(value as object) } as never);
   });
 }
 
 describe('MapLibre integration boundary and honest local fallback', () => {
+  it.each([
+    [{ x: 143, y: 200 }, [0, 0]],
+    [{ x: 280, y: 200 }, [-134, 0]],
+    [{ x: 5, y: 200 }, [135, 0]],
+    [{ x: 143, y: 10 }, [0, 52]],
+  ])('keeps a wide hover inside the map at %j', (point, offset) => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(286);
+    const props = setup();
+    render(<MapClient {...props} />);
+    emit(state.maps[0], 'load');
+    emit(state.maps[0], 'mousemove:tract-fill', {
+      features: [{ properties: { id: areas[0].id } }],
+      point,
+      lngLat: {},
+    });
+    expect(state.popupOffset).toHaveBeenLastCalledWith(offset);
+    expect(state.popupNode).toHaveStyle({ maxWidth: '246px' });
+  });
+
+  it.each([
+    [0, '0% priority'],
+    [37.6, '38% priority'],
+    [100, '100% priority'],
+  ] as const)('formats priority %s as a compact percentage', (priority, label) => {
+    const props = setup({
+      areas: scoreAreas(areas, 50).map((area, index) =>
+        index === 0 ? { ...area, priority } : area,
+      ),
+    });
+    render(<MapClient {...props} />);
+    const map = state.maps[0];
+    emit(map, 'load');
+    emit(map, 'mousemove:tract-fill', {
+      features: [{ properties: { id: areas[0].id } }],
+      lngLat: {},
+    });
+    expect(state.popupNode!.querySelector('.map-hover-priority')).toHaveTextContent(label);
+    expect(state.popupNode).not.toHaveTextContent('/ 100');
+  });
+
   it('mounts layers, updates overlays, selects areas, explains hover and drags within bounds', async () => {
     const props = setup(),
       view = render(<MapClient {...props} />),
@@ -183,7 +235,11 @@ describe('MapLibre integration boundary and honest local fallback', () => {
       features: [{ properties: { id: areas[0].id } }],
       lngLat: {},
     });
-    expect(state.popup).toHaveBeenCalledWith(expect.stringContaining('0 / 100 priority'));
+    expect(state.popup).toHaveBeenCalledWith(expect.stringContaining('0% priority'));
+    expect(state.popupNode).toHaveClass('map-hover-label');
+    expect(state.popupNode).toHaveAttribute('role', 'tooltip');
+    expect(state.popupNode!.querySelector('.map-hover-priority')).toHaveTextContent('0% priority');
+    expect(state.popupNode!.querySelector('br')).toBeNull();
     emit(map, 'mousemove:tract-fill', { features: [], lngLat: {} });
     emit(map, 'mouseleave:tract-fill');
     emit(map, 'click:tract-fill', { features: [] });

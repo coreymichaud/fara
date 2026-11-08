@@ -14,13 +14,7 @@ export default function About() {
     <>
       <main id="main" className="editorial-page about-page">
         <header className="editorial-heading">
-          <div>
-            <p className="eyebrow">{product.fullName}</p>
-            <h1>About {product.name}</h1>
-          </div>
-          <p className="page-lead">
-            For the people deciding where the next mobile pantry could go.
-          </p>
+          <h1>About {product.name}</h1>
         </header>
         <section className="about-opening" aria-labelledby="planning-heading">
           <div>
@@ -49,10 +43,14 @@ export default function About() {
         <section className="about-local" aria-labelledby="local-heading">
           <h2 id="local-heading">What needs a local check</h2>
           <div>
-            <p>
-              Venue permission. Safety. Accessibility. Current pantry services. Demand. Public
-              indicators cannot confirm any of these.
-            </p>
+            <ul className="local-checks" aria-label="Checks to make locally">
+              <li>Venue permission</li>
+              <li>Safety</li>
+              <li>Accessibility</li>
+              <li>Current pantry services</li>
+              <li>Community demand</li>
+            </ul>
+            <p>Public indicators cannot confirm any of these.</p>
             <p>
               The map uses straight-line distances and tract representative points. It does not
               predict attendance, travel time, or people served. A saved proposal is not a confirmed
@@ -70,7 +68,7 @@ export default function About() {
               official DataKind product or a Beacon integration.
             </p>
             <Link className="editorial-link" href="/methodology">
-              Explore the data & methods
+              Explore Data &amp; Methods
             </Link>
           </section>
           <section>

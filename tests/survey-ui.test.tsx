@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { CommunitySurvey } from '@/features/survey/community-survey';
@@ -39,6 +39,29 @@ describe('anonymous community check-in', () => {
   });
 });
 describe('private creator view', () => {
+  it('withholds a sparse answer category even when the total exceeds five responses', async () => {
+    window.history.replaceState(null, '', '/plans/test/manage');
+    const aggregated = aggregateResponses([
+      ...Array.from({ length: 5 }, () => survey),
+      { ...survey, works: 'No' },
+    ]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ ...aggregated, surveyEnabled: true }),
+      }),
+    );
+    render(<CreatorResults id="test" />);
+    expect(await screen.findByText('anonymous check-ins')).toBeInTheDocument();
+    const question = screen
+      .getByRole('heading', { name: aggregated.questions[0].label })
+      .closest('section')!;
+    expect(within(question).getByText(/Breakdown withheld/)).toBeVisible();
+    expect(within(question).queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('table')).toHaveLength(3);
+  });
+
   it('retries an initial load failure using the existing private session', async () => {
     const user = userEvent.setup();
     window.history.replaceState(null, '', '/plans/test/manage');

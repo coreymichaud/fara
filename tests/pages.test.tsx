@@ -35,6 +35,8 @@ import RootLayout, { metadata } from '@/app/layout';
 import robots from '@/app/robots';
 import PlanPage from '@/app/plans/[id]/page';
 import Management from '@/app/plans/[id]/manage/page';
+import SurveyPage from '@/app/plans/[id]/survey/page';
+import { ApiError } from '@/lib/server/plans';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/header';
 
@@ -50,6 +52,7 @@ describe('crawlable pages and meaningful framework states', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       'Put your next pantryon the map.',
     );
+    expect(screen.getByText('Central Florida · Pantry Planning')).toBeVisible();
     for (const link of screen.getAllByRole('link', { name: 'Go to planner' })) {
       expect(link).toHaveAttribute('href', '/planner');
     }
@@ -66,7 +69,7 @@ describe('crawlable pages and meaningful framework states', () => {
     );
     for (const [href, name] of [
       ['/resources', 'Resources'],
-      ['/methodology', 'Data & methods'],
+      ['/methodology', 'Data & Methods'],
       ['/about', 'About FARA'],
     ]) {
       expect(
@@ -81,23 +84,35 @@ describe('crawlable pages and meaningful framework states', () => {
       manifest: { ...dataset.manifest, mode: 'observed' },
     });
     const observed = render(await Home());
-    expect(screen.getByText('3 Census tracts · 2020 Census boundaries')).toBeInTheDocument();
+    expect(screen.getByText('3 Census tracts · 2020 boundaries')).toBeInTheDocument();
     expect(screen.queryByText(/Illustrative test data/)).not.toBeInTheDocument();
     observed.unmount();
     render(await Planner());
     expect(screen.getByText('Planning workspace')).toBeInTheDocument();
     render(await Methodology());
-    expect(screen.getByRole('heading', { level: 1, name: 'Data & methods' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Data & Methods' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Two signals/ })).toBeInTheDocument();
     expect(screen.getByText(/schema 1.0/)).toBeInTheDocument();
+    expect(screen.getByRole('main').querySelector('details, summary')).toBeNull();
+    for (const title of [
+      'How the priority index is calculated',
+      'How candidate locations are ranked',
+      'Dataset version & missingness',
+      'Catchment assumptions',
+      'How responses and creator access are protected',
+    ]) {
+      expect(screen.getByRole('heading', { level: 3, name: title })).toBeVisible();
+    }
+    expect(screen.getByText(/A constant variable contributes 0.5/)).toBeVisible();
+    expect(screen.getByText(/Whole-question breakdowns are withheld/)).toBeVisible();
   });
   it('has accurate about, loading, failure, 404, metadata and navigation', async () => {
     const about = render(<About />);
     expect(screen.getByRole('heading', { level: 1, name: 'About FARA' })).toBeInTheDocument();
     expect(screen.getByText(/not an official DataKind/)).toBeInTheDocument();
     const footer = within(screen.getByRole('contentinfo'));
-    expect(footer.getByText('U.S. Census · USDA ERS')).toBeInTheDocument();
-    expect(footer.getByRole('link', { name: 'Data & methods' })).toHaveAttribute(
+    expect(footer.getByText('Plan with your community.')).toBeInTheDocument();
+    expect(footer.getByRole('link', { name: 'Data & Methods' })).toHaveAttribute(
       'href',
       '/methodology',
     );
@@ -148,8 +163,34 @@ describe('crawlable pages and meaningful framework states', () => {
     mocks.get.mockResolvedValue(base);
     const first = render(await PlanPage({ params: Promise.resolve({ id }) }));
     expect(screen.getByText('Illustrative test data')).toBeInTheDocument();
-    expect(screen.getByText('Anonymous check-in form')).toBeInTheDocument();
+    expect(screen.queryByText('Anonymous check-in form')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Would this work for you?' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Open Community Check-in' })).not.toBeInTheDocument();
     first.unmount();
+    const participant = render(await SurveyPage({ params: Promise.resolve({ id }) }));
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Would this work for you?' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: scenario.title })).toBeInTheDocument();
+    expect(screen.getByText('Illustrative test data')).toBeVisible();
+    expect(screen.getByText('Anonymous check-in form')).toBeVisible();
+    expect(screen.getByText('FARA')).toBeVisible();
+    expect(screen.queryByRole('contentinfo')).not.toBeInTheDocument();
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+    expect(screen.queryByText('Planning estimate')).not.toBeInTheDocument();
+    expect(screen.queryByText('Area indicators')).not.toBeInTheDocument();
+    expect(participant.container.innerHTML).not.toContain(base.managementHash);
+    expect(screen.getByRole('link', { name: /View proposed location on map/ })).toHaveAttribute(
+      'href',
+      expect.stringContaining(`mlat=${scenario.coordinates[1]}`),
+    );
+    expect(screen.getByRole('link', { name: /View the full proposal/ })).toHaveAttribute(
+      'href',
+      `/plans/${id}`,
+    );
+    participant.unmount();
     for (const budgetFeasible of [true, false]) {
       mocks.get.mockResolvedValue({
         ...base,
@@ -177,22 +218,54 @@ describe('crawlable pages and meaningful framework states', () => {
       });
       const view = render(await PlanPage({ params: Promise.resolve({ id }) }));
       expect(screen.getByText('Verify this venue')).toBeInTheDocument();
-      expect(screen.getByText('Community check-in is closed for this plan.')).toBeInTheDocument();
+      expect(
+        screen.queryByText('Community check-in is closed for this plan.'),
+      ).not.toBeInTheDocument();
       expect(screen.getByText('Alternative tract')).toBeInTheDocument();
       view.unmount();
+      const closedSurvey = render(await SurveyPage({ params: Promise.resolve({ id }) }));
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Community check-in is closed for this plan.',
+      );
+      expect(screen.queryByText('Anonymous check-in form')).not.toBeInTheDocument();
+      expect(screen.queryByText('Verify this venue')).not.toBeInTheDocument();
+      expect(screen.queryByText('Illustrative test data')).not.toBeInTheDocument();
+      closedSurvey.unmount();
     }
     render(await Management({ params: Promise.resolve({ id }) }));
     expect(screen.getByText('Private results')).toBeInTheDocument();
     mocks.get.mockResolvedValue(null);
     await expect(PlanPage({ params: Promise.resolve({ id }) })).rejects.toThrow('404');
+    await expect(SurveyPage({ params: Promise.resolve({ id }) })).rejects.toThrow('404');
     mocks.get.mockRejectedValue(new Error('Database unavailable'));
     await expect(PlanPage({ params: Promise.resolve({ id }) })).rejects.toThrow(
       'Database unavailable',
+    );
+    await expect(SurveyPage({ params: Promise.resolve({ id }) })).rejects.toThrow(
+      'Database unavailable',
+    );
+    mocks.get.mockRejectedValue(new ApiError(503, 'Temporarily unavailable'));
+    await expect(SurveyPage({ params: Promise.resolve({ id }) })).rejects.toThrow(
+      'Temporarily unavailable',
     );
   });
 });
 
 describe('main navigation', () => {
+  it('omits the masthead on participant routes and restores it when returning to a public plan', () => {
+    mocks.pathname.mockReturnValue('/plans/example/survey');
+    const view = render(<Header />);
+    expect(screen.queryByRole('banner')).not.toBeInTheDocument();
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+    mocks.pathname.mockReturnValue('/plans/example');
+    view.rerender(<Header />);
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
+    mocks.pathname.mockReturnValue('/plans/example/survey/');
+    view.rerender(<Header />);
+    expect(screen.queryByRole('banner')).not.toBeInTheDocument();
+  });
+
   it('returns to the homepage from the planner and identifies the home wordmark', () => {
     mocks.pathname.mockReturnValue('/');
     render(<Header />);
@@ -222,7 +295,7 @@ describe('main navigation', () => {
     expect(screen.getByRole('link', { name: 'FARA home' })).toHaveTextContent(/^FARA$/);
     expect(screen.queryByText('Central Florida · Prototype')).not.toBeInTheDocument();
   });
-  it.each(['/plans/example', '/plans/example/manage'])(
+  it.each(['/plans/example', '/plans/example/manage', '/plans/example/survey/notes'])(
     'keeps Planner section-active on %s without marking the link as the current page',
     (pathname) => {
       mocks.pathname.mockReturnValue(pathname);

@@ -1,13 +1,15 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import Resources, { metadata } from '@/app/resources/page';
-import { resourceSections, resourcesReviewedOn } from '@/config/resources';
+import { resourceSections } from '@/config/resources';
 
 describe('nonprofit resources', () => {
   it('renders every resource with an attributed provider, service area and safe external link', () => {
     render(<Resources />);
+    expect(screen.getByRole('main').querySelector('details, summary')).toBeNull();
     expect(screen.getByRole('heading', { level: 1, name: 'Resources' })).toBeInTheDocument();
-    expect(screen.getByText('November 7, 2026')).toHaveAttribute('dateTime', resourcesReviewedOn);
+    expect(screen.queryByText(/Links reviewed/)).not.toBeInTheDocument();
+    expect(screen.queryByText('November 7, 2026')).not.toBeInTheDocument();
     expect(metadata.title).toBe('Resources | FARA');
     expect(metadata.description).toContain('nonprofit teams');
     const destinations: string[] = [];

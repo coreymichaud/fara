@@ -12,7 +12,7 @@ export default async function Home() {
     <>
       <main id="main" className="home-page">
         <section className="home-hero" aria-labelledby="home-title">
-          <p className="eyebrow">Central Florida · Pantry planning</p>
+          <p className="eyebrow">Central Florida · Pantry Planning</p>
           <h1 id="home-title">
             Put your next pantry
             <br />
@@ -65,11 +65,9 @@ export default async function Home() {
                 <li key={county}>{county}</li>
               ))}
             </ul>
-            <span>
+            <span className="atlas-meta">
               {manifest.areaCount.toLocaleString('en-US')} Census tracts ·{' '}
-              {manifest.mode === 'illustrative'
-                ? 'Illustrative test data'
-                : '2020 Census boundaries'}
+              {manifest.mode === 'illustrative' ? 'Illustrative test data' : '2020 boundaries'}
             </span>
           </figcaption>
         </figure>

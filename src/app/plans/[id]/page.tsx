@@ -1,20 +1,13 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { ArrowUpRight } from 'lucide-react';
 import { Footer } from '@/components/footer';
-import { getRepository } from '@/lib/storage';
-import { ApiError, publicPlan, requirePlan } from '@/lib/server/plans';
-import { CommunitySurvey } from '@/features/survey/community-survey';
+import { loadPublicPlan } from '@/lib/server/load-public-plan';
 import { product } from '@/config/product';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export default async function PlanPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const plan = await requirePlan(getRepository(), id)
-    .then(publicPlan)
-    .catch((e: unknown) => {
-      if (e instanceof ApiError && e.status === 404) notFound();
-      throw e;
-    });
+  const plan = await loadPublicPlan(id);
   const { scenario, result, area, manifest } = plan;
   return (
     <>
@@ -35,11 +28,13 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
           <p>
             {scenario.coordinates[1].toFixed(6)}, {scenario.coordinates[0].toFixed(6)} ·{' '}
             <a
+              className="inline-arrow"
               href={`https://www.openstreetmap.org/?mlat=${scenario.coordinates[1]}&mlon=${scenario.coordinates[0]}#map=14/${scenario.coordinates[1]}/${scenario.coordinates[0]}`}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
             >
-              View location on OpenStreetMap ↗
+              View location on OpenStreetMap <ArrowUpRight size={16} aria-hidden="true" />
+              <span className="sr-only"> (opens in a new tab)</span>
             </a>
           </p>
           <p>
@@ -142,19 +137,6 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
             </p>
           </section>
         )}
-        <section className="community-section">
-          <div className="eyebrow">Community check-in</div>
-          <h2>Would this work for you?</h2>
-          <p>
-            This is a proposed event, not a confirmed service or registration. Your check-in does
-            not reserve food or a place.
-          </p>
-          {plan.surveyEnabled ? (
-            <CommunitySurvey id={id} />
-          ) : (
-            <p className="callout">Community check-in is closed for this plan.</p>
-          )}
-        </section>
         <section className="provenance">
           <h2>Sources & assumptions</h2>
           <p>

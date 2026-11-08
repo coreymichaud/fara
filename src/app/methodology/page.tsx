@@ -3,9 +3,10 @@ import type { Metadata } from 'next';
 import { Button } from '@/components/ui/button';
 import { product } from '@/config/product';
 import { Footer } from '@/components/footer';
+import { PageContents } from '@/components/page-contents';
 import { loadDataset } from '@/lib/data/load';
 export const metadata: Metadata = {
-  title: `Data & methods | ${product.name}`,
+  title: `Data & Methods | ${product.name}`,
   description:
     'Sources, calculations, uncertainty, and privacy practices behind the Central Florida pantry planning map.',
 };
@@ -15,25 +16,29 @@ export default async function Methodology() {
     <>
       <main id="main" className="editorial-page methodology-page">
         <header className="editorial-heading">
-          <div>
-            <p className="eyebrow">The thinking behind the map</p>
-            <h1>Data & methods</h1>
-          </div>
-          <p className="page-lead">
-            Public indicators help narrow the search. Here’s how the numbers work, and where local
-            judgment takes over.
-          </p>
+          <h1>Data &amp; Methods</h1>
         </header>
         <div className="methods-layout">
-          <nav className="methods-topics" aria-label="Methodology topics">
-            <a href="#model">The model</a>
-            <a href="#sources">Sources & vintages</a>
-            <a href="#limits">Limits & privacy</a>
-          </nav>
+          <PageContents
+            className="methods-topics"
+            label="Methodology topics"
+            items={[
+              { id: 'model', label: 'The model' },
+              { id: 'sources', label: 'Sources & vintages' },
+              { id: 'limits', label: 'Limits & privacy' },
+            ]}
+          />
           <div className="methods-content">
             <section id="model">
-              <p className="eyebrow">The model</p>
-              <h2>Start with the geography</h2>
+              <div className="reference-section-heading">
+                <p className="eyebrow">
+                  <span className="section-number" aria-hidden="true">
+                    01
+                  </span>{' '}
+                  The model
+                </p>
+                <h2>Start with the geography</h2>
+              </div>
               <p>
                 The supplied Census extracts identify Lake, Orange, Osceola, and Seminole counties.
                 We join all {manifest.areaCount} tracts by 11-digit Census GEOID to 2020 Census
@@ -66,8 +71,8 @@ export default async function Methodology() {
               <p className="signal-result">
                 Normalized across the study area → <strong>Relative priority index, 0–100</strong>
               </p>
-              <details className="method-detail">
-                <summary>How the priority index is calculated</summary>
+              <div className="method-detail">
+                <h3>How the priority index is calculated</h3>
                 <p>
                   Poverty is the percentage of people with determined poverty status below their
                   poverty threshold (ACS 2020–2024). Retail distance is the percentage of 2020
@@ -91,7 +96,7 @@ export default async function Methodology() {
                   not propagated into a statistical confidence estimate. This is a relative index,
                   not an absolute food insecurity probability.
                 </p>
-              </details>
+              </div>
             </section>
             <section>
               <h2>A single-event greedy ranking</h2>
@@ -99,8 +104,8 @@ export default async function Methodology() {
                 Compare one proposed event at a time. Radius and household capacity affect the
                 ranking; a candidate point still needs to be checked as a venue.
               </p>
-              <details className="method-detail">
-                <summary>How candidate locations are ranked</summary>
+              <div className="method-detail">
+                <h3>How candidate locations are ranked</h3>
                 <p>
                   Each eligible tract representative point is a candidate. We include other tract
                   points within the entered Haversine radius. The planning value equals min(event
@@ -116,11 +121,18 @@ export default async function Methodology() {
                   Operator-entered costs determine event budget feasibility but do not imply an
                   optimized spending allocation. Hours do not change modeled attendance.
                 </p>
-              </details>
+              </div>
             </section>
             <section id="sources">
-              <p className="eyebrow">Sources & vintages</p>
-              <h2>Source register</h2>
+              <div className="reference-section-heading">
+                <p className="eyebrow">
+                  <span className="section-number" aria-hidden="true">
+                    02
+                  </span>{' '}
+                  Sources &amp; vintages
+                </p>
+                <h2>Source register</h2>
+              </div>
               <table>
                 <thead>
                   <tr>
@@ -173,8 +185,8 @@ export default async function Methodology() {
                   </tr>
                 </tbody>
               </table>
-              <details className="method-detail">
-                <summary>Dataset version & missingness</summary>
+              <div className="method-detail">
+                <h3>Dataset version & missingness</h3>
                 <p>
                   Version <code>{manifest.datasetVersion}</code>; schema {manifest.schemaVersion};
                   generated {manifest.generatedAt}. Data mode: {manifest.mode}. Missing poverty:{' '}
@@ -182,19 +194,26 @@ export default async function Methodology() {
                   ; missing SNAP: {manifest.missingness.snap}. Older source years limit present-day
                   interpretation; check field conditions.
                 </p>
-              </details>
+              </div>
             </section>
             <section id="limits">
-              <p className="eyebrow">Limits & privacy</p>
-              <h2>What the map cannot tell you</h2>
+              <div className="reference-section-heading">
+                <p className="eyebrow">
+                  <span className="section-number" aria-hidden="true">
+                    03
+                  </span>{' '}
+                  Limits &amp; privacy
+                </p>
+                <h2>What the map cannot tell you</h2>
+              </div>
               <ul className="method-limits">
                 <li>Existing pantry locations and service coverage are unknown.</li>
                 <li>Distances are straight-line, not travel times.</li>
                 <li>Household capacity is entered by the planner, not predicted attendance.</li>
                 <li>A saved proposal is not a confirmed event.</li>
               </ul>
-              <details className="method-detail">
-                <summary>Read the catchment assumptions</summary>
+              <div className="method-detail">
+                <h3>Catchment assumptions</h3>
 
                 <p>
                   A tract’s representative point falling within a circle does not mean all residents
@@ -204,7 +223,7 @@ export default async function Methodology() {
                   infer causation. Compare the candidate ranks at alternative radii and weights to
                   understand model sensitivity.
                 </p>
-              </details>
+              </div>
             </section>
             <section>
               <h2>Community feedback & privacy</h2>
@@ -212,8 +231,8 @@ export default async function Methodology() {
                 Check-ins are voluntary and anonymous. Creator access is private, and small response
                 groups are withheld.
               </p>
-              <details className="method-detail">
-                <summary>How responses and creator access are protected</summary>
+              <div className="method-detail">
+                <h3>How responses and creator access are protected</h3>
                 <p>
                   Four fixed-choice questions collect voluntary feedback, with one perceived barrier
                   per response. This convenience sample cannot represent the whole community. No
@@ -223,7 +242,7 @@ export default async function Methodology() {
                   under 5 or any nonzero cell is under 5. Anonymous responses cannot guarantee
                   uniqueness.
                 </p>
-              </details>
+              </div>
             </section>
             <Button asChild>
               <Link href="/planner">Go to planner</Link>

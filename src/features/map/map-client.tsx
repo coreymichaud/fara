@@ -7,6 +7,9 @@ import { circlePolygon } from '@/lib/domain/planner';
 import type { MapProps } from './map-view';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
+const priorityLabel = (priority: number | null) =>
+  priority === null ? 'Insufficient data' : `${priority.toFixed(0)}% priority`;
+
 export default function MapClient(props: MapProps) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<LibreMap | null>(null);
@@ -171,15 +174,39 @@ export default function MapClient(props: MapProps) {
           },
           layout: { visibility: 'none' },
         });
-        const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
+        const popup = new maplibregl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          maxWidth: 'none',
+          anchor: 'bottom',
+          className: 'map-hover-popup',
+        });
         instance.on('mousemove', 'tract-fill', (event) => {
           instance.getCanvas().style.cursor = 'pointer';
           const id = String(event.features?.[0]?.properties?.id);
           const area = current.current.areas.find((a) => a.id === id);
           if (area) {
             const node = document.createElement('div');
-            node.textContent = `${area.label} · ${area.county} · ${area.priority === null ? 'Insufficient data' : `${area.priority.toFixed(0)} / 100 priority`}`;
+            node.className = 'map-hover-label';
+            node.style.maxWidth = `${Math.max(0, Math.min(360, element.clientWidth - 40))}px`;
+            node.setAttribute('role', 'tooltip');
+            const place = document.createElement('span');
+            place.className = 'map-hover-place';
+            place.textContent = `${area.label} · ${area.county}`;
+            const priority = document.createElement('span');
+            priority.className = 'map-hover-priority';
+            priority.textContent = ` · ${priorityLabel(area.priority)}`;
+            node.append(place, priority);
             popup.setLngLat(event.lngLat).setDOMContent(node).addTo(instance);
+            // Wide single-line labels need clamping; automatic side anchors can clip them.
+            const popupElement = popup.getElement();
+            const halfWidth = popupElement.offsetWidth / 2;
+            const center = Math.max(
+              halfWidth + 8,
+              Math.min(event.point.x, element.clientWidth - halfWidth - 8),
+            );
+            const bottom = Math.max(popupElement.offsetHeight + 8, event.point.y);
+            popup.setOffset([center - event.point.x, bottom - event.point.y]);
           }
         });
         instance.on('mouseleave', 'tract-fill', () => {
@@ -284,7 +311,7 @@ export default function MapClient(props: MapProps) {
                 onClick={() => props.onSelect(a.id)}
               >
                 <title>
-                  {a.label}, {a.county}
+                  {a.label} · {a.county} · {priorityLabel(a.priority)}
                 </title>
               </path>
             );

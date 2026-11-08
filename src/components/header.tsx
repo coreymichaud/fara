@@ -15,6 +15,8 @@ export function Header() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
+  // Participant links are standalone surveys, without the site's navigation.
+  if (/^\/plans\/[^/]+\/survey\/?$/.test(pathname)) return null;
   return (
     <header
       className="site-header"

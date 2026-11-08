@@ -8,7 +8,6 @@ import {
   ArrowRight,
   ArrowUp,
   Check,
-  Copy,
   Flag,
   Info,
   Layers,
@@ -30,6 +29,7 @@ import {
   type Scenario,
 } from '@/lib/domain/schema';
 import { EvidenceChart } from './evidence-chart';
+import { SavedPlanLinks } from './saved-plan-links';
 
 export function Workspace({ data }: { data: Dataset }) {
   const [scenario, setScenario] = useState<Scenario>(() => {
@@ -183,20 +183,12 @@ export function Workspace({ data }: { data: Dataset }) {
       setSaving(false);
     }
   }
-  async function copy(value: string) {
-    try {
-      await navigator.clipboard.writeText(value);
-      setMessage('Link copied.');
-    } catch {
-      setMessage('Clipboard unavailable. Select and copy the link below.');
-    }
-  }
   const pct = (v: number | null) => (v === null ? 'Not available' : `${v.toFixed(1)}%`);
   return (
     <>
       <main id="main" className="workspace">
         <div className="workspace-heading">
-          <h1>Pantry planner</h1>
+          <h1>Pantry Planner</h1>
           <div className="workspace-meta">
             <span className={data.manifest.mode === 'illustrative' ? 'illustrative' : ''}>
               {data.manifest.mode === 'illustrative'
@@ -891,44 +883,10 @@ export function Workspace({ data }: { data: Dataset }) {
                 {saving ? 'Saving the snapshot…' : 'Save & share this plan'}
                 <ArrowRight size={16} />
               </Button>
-              {message && (
+              {message && !saved && (
                 <p className="save-message" role="status">
                   {message}
                 </p>
-              )}
-              {saved && (
-                <div className="saved-links">
-                  <strong>
-                    <Check size={15} />
-                    Plan saved persistently
-                  </strong>
-                  <label>
-                    Public read-only link
-                    <input readOnly value={saved.publicUrl} onFocus={(e) => e.target.select()} />
-                  </label>
-                  <div>
-                    <Button variant="secondary" onClick={() => copy(saved.publicUrl)}>
-                      <Copy size={14} />
-                      Copy share link
-                    </Button>
-                    <Button asChild variant="ghost">
-                      <Link href={saved.publicUrl}>
-                        Open plan <ArrowRight size={14} />
-                      </Link>
-                    </Button>
-                  </div>
-                  <details>
-                    <summary>Private creator link · keep this safe</summary>
-                    <p>
-                      Anyone with this separate link can view aggregates and close the survey. It
-                      cannot be recovered if lost.
-                    </p>
-                    <a href={saved.manageUrl}>Open private results</a>
-                    <Button variant="secondary" onClick={() => copy(saved.manageUrl)}>
-                      Copy private link
-                    </Button>
-                  </details>
-                </div>
               )}
             </section>
             <details className="caveats">
@@ -944,6 +902,15 @@ export function Workspace({ data }: { data: Dataset }) {
             </details>
           </aside>
         </div>
+        {saved && (
+          <SavedPlanLinks
+            key={saved.publicUrl}
+            publicUrl={saved.publicUrl}
+            manageUrl={saved.manageUrl}
+            surveyEnabled={scenario.surveyEnabled}
+            notice={message}
+          />
+        )}
       </main>
       <Footer />
     </>

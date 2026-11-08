@@ -12,13 +12,13 @@ The map helps you decide **where to look**. Local knowledge helps you decide **w
 
 FARA follows the questions a planner actually has to answer:
 
-| Explore | Make a plan | Get feedback |
-| --- | --- | --- |
+| Explore                                                                                                     | Make a plan                                                                                                                      | Get feedback                                                                                                                               |
+| ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | Which areas deserve a closer look? Compare census tracts using poverty and distance-to-retailer indicators. | What might an event look like? Set a location, radius, capacity, time, and budget; compare alternatives and flag local concerns. | Does the proposal work for the community? Share a read-only plan, collect an anonymous check-in, and review aggregate responses privately. |
 
 You can adjust the priority weights and test different assumptions. Recommendations recalculate from the same published data; there's no generative AI or opaque prediction behind the ranking.
 
-FARA also includes a **Resources** directory with food-program guidance, referral tools, and organizations serving Central Florida.
+FARA also includes a **Resources** directory with food-program guidance, referral tools, and organizations serving Central Florida. Resources, Data & Methods, and About use plain title-only page headings and show all explanations without expandable sections. The Resources and Data & Methods contents lists highlight the current topic while scrolling and support ordinary keyboard-accessible section links.
 
 ## Where it works
 
@@ -80,12 +80,17 @@ The pipeline creates the minimized web assets and checks the joins, geometries, 
 
 ## Sharing a plan
 
-The planner creates two different links:
+The planner provides separate links for each audience:
 
-- A **public, read-only plan** that can include an anonymous community check-in.
+- A **public, read-only plan** with the full proposal, planning estimates, assumptions, and alternatives.
+- A **community survey**, when check-in is enabled, with just the proposed location, time, and existing four anonymous questions.
 - A **private creator link** for managing the proposal and seeing aggregated responses.
 
-Keep the creator link safe. Small response groups are suppressed in results, and the survey does not ask for names or contact details. It's feedback on a proposal—not a representative survey or an event registration system.
+After saving, a compact sharing strip appears **below** the workspace and receives keyboard focus. It leaves the planner's position, height, and scrolling panels unchanged. **Share Your Plan**, **Community Check-in**, and **Your Private Dashboard** each have an open action, a copy button with its own confirmation, and a selectable URL for manual copying. The survey link is omitted when check-in was not enabled. On phones the links stack; on larger screens they sit side by side.
+
+The public plan lives at `/plans/{id}`, the participant survey at `/plans/{id}/survey`, and the private dashboard at `/plans/{id}/manage`. The organizer's detailed plan has no survey prompt or check-in section. Share the separate survey link with participants: it opens a standalone form with a small FARA label and no website navigation or footer, and retains an optional link to the full proposal. Closing or reopening the check-in through the creator dashboard controls the survey page and submissions through the existing API.
+
+Save the private dashboard link to review results and open or close the community check-in later. Anyone with it can access the dashboard, so do not share it publicly. The creator token continues to be stored in this browser when storage is available; the private link also works in another browser. Small response groups are suppressed in results, and the survey does not ask for names or contact details. It's feedback on a proposal—not a representative survey or an event registration system.
 
 ## Deployment
 
@@ -109,13 +114,13 @@ The complete `npm run check` suite also exercises data validation, Python checks
 
 ## Further reading
 
-| Document | What's there |
-| --- | --- |
-| [Data & methods](docs/methodology.md) | How the priority score and candidate ranking work |
-| [Data audit](docs/data_audit.md) · [Dictionary](docs/data_dictionary.md) | Sources, fields, and processing notes |
-| [Limitations](docs/limitations.md) | What the results should—and shouldn't—be used for |
-| [Deployment guide](docs/DEPLOYMENT.md) | Cloud setup, permissions, and release steps |
-| [Verification](docs/VERIFICATION.md) | Tests, coverage, and known gaps |
+| Document                                                                 | What's there                                      |
+| ------------------------------------------------------------------------ | ------------------------------------------------- |
+| [Data & Methods](docs/methodology.md)                                    | How the priority score and candidate ranking work |
+| [Data audit](docs/data_audit.md) · [Dictionary](docs/data_dictionary.md) | Sources, fields, and processing notes             |
+| [Limitations](docs/limitations.md)                                       | What the results should—and shouldn't—be used for |
+| [Deployment guide](docs/DEPLOYMENT.md)                                   | Cloud setup, permissions, and release steps       |
+| [Verification](docs/VERIFICATION.md)                                     | Tests, coverage, and known gaps                   |
 
 ---
 
