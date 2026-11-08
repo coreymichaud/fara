@@ -1,17 +1,46 @@
-data/raw/
-data/processed/
-public/data/
-public/vendor/
-# Supplied project inputs stay local; implementation notes live in docs/.
-references/brand/
-Food_Access_Codex_Build_Brief_FINAL.md
+# Local source inputs, intermediates, and generated web assets.
+/data/
+/references/
+/public/data/
+/public/vendor/
+/Food_Access_Codex_Build_Brief_FINAL.md
 *.csv
+*.tsv
 *.parquet
 *.xlsx
+*.xls
+*.gpkg
+*.shp
+*.shx
+*.dbf
+*.prj
+*.tif
+*.tiff
+*.zip
+
+# Environment files, credentials, and local stores.
 .env*
 !.env.example
 *credentials*.json
 *service-account*.json
+*service_account*.json
+*serviceAccount*.json
+*firebase-adminsdk*.json
+*.pem
+*.key
+*.p12
+*.pfx
+.secrets/
+.aws/
+.gcloud/
+.gcp/
+.firebase/
+.local/
+*.sqlite
+*.sqlite3
+*.db
+
+# Dependencies, generated declarations, reports, and caches.
 node_modules/
 .next/
 next-env.d.ts
@@ -19,7 +48,6 @@ coverage/
 coverage.json
 .hypothesis/
 .ipynb_checkpoints/
-.aws/
 playwright-report/
 test-results/
 .venv/
@@ -29,8 +57,16 @@ __pycache__/
 .ruff_cache/
 .coverage*
 htmlcov/
-.local/
 *.tsbuildinfo
+
+# Machine-specific editor and assistant files.
+/.agents/
+/.codex/
+/AGENTS.md
+.idea/
+.vscode/
+*.swp
+*.swo
 .DS_Store
-firebase-debug.log
-firestore-debug.log
+Thumbs.db
+*.log
