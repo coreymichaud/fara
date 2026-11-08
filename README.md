@@ -6,13 +6,15 @@ The local pipeline joins **490 census tracts** in Lake, Orange, Osceola and Semi
 
 The **Resources** page at `/resources` brings together food-program guidance, referral tools, and Central Florida organizations for nonprofit staff. The directory identifies publishers, service areas, and practical uses, and records when the links were reviewed. The [resource curation notes](docs/resources.md) record sources and maintenance guidance. These links do not add pantry locations or service-coverage data to the planning map.
 
-The homepage introduces FARA and links to the planner, Resources, Data & methods, and About. The working map lives at `/planner`; the FARA wordmark always returns to `/`.
+The homepage is a single-screen introduction with a Census study-area graphic and links to the planner, Resources, Data & methods, and About. About and Data & methods use open layouts; full calculations and privacy details are available in expandable sections. The working map lives at `/planner`; the FARA wordmark always returns to `/`.
 
 ![FARA homepage](docs/screenshots/home-desktop.png)
 
 ![FARA desktop planning workspace](docs/screenshots/planner-desktop.png)
 
-Homepage screenshots: [phone](docs/screenshots/home-phone.png), [tablet](docs/screenshots/home-tablet.png), and [wide desktop](docs/screenshots/home-wide.png). Planner screenshots: [phone](docs/screenshots/planner-phone.png), [tablet](docs/screenshots/planner-tablet.png), and [wide desktop](docs/screenshots/planner-wide.png). Regenerate these Chromium captures with `npm run test:e2e`.
+Reference pages: [About](docs/screenshots/about-desktop.png) and [Data & methods](docs/screenshots/methodology-desktop.png).
+
+Homepage screenshots: [phone](docs/screenshots/home-phone.png), [tablet](docs/screenshots/home-tablet.png), and [wide desktop](docs/screenshots/home-wide.png). Planner screenshots: [phone](docs/screenshots/planner-phone.png), [tablet](docs/screenshots/planner-tablet.png), and [wide desktop](docs/screenshots/planner-wide.png). The desktop planner also fits 1440×900, 1440×768, and 1280×720 laptop screens, with independently scrollable panels. Regenerate these Chromium captures with `npm run test:e2e`.
 
 ```text
 Local Beacon/public inputs ── uv + Pandas/DuckDB + spatial validation ── public/data/

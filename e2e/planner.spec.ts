@@ -273,7 +273,7 @@ test('homepage introduces FARA and connects the planner and reference pages', as
       4,
     );
     await expect(page.locator('figcaption')).toContainText(
-      '490 Census tracts · 1,694 SNAP retailer locations',
+      '490 Census tracts · 2020 Census boundaries',
     );
     const plannerLink = page.locator('.hero-actions').getByRole('link', { name: 'Go to planner' });
     const bounds = await plannerLink.boundingBox();
@@ -290,15 +290,29 @@ test('homepage introduces FARA and connects the planner and reference pages', as
           .violations,
       ).toEqual([]);
     }
+    expect(
+      await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1),
+    ).toBe(true);
+    await expect(page.getByRole('contentinfo')).toBeInViewport({ ratio: 1 });
+    if (width >= 1200) {
+      expect(
+        await page.locator('.header-descriptor').evaluate((element) => {
+          const style = getComputedStyle(element);
+          return element.getBoundingClientRect().height <= Number.parseFloat(style.lineHeight) + 1;
+        }),
+      ).toBe(true);
+    }
     await page.screenshot({ path: `docs/screenshots/home-${name}.png`, fullPage: true });
-    await page.getByRole('link', { name: 'See how it works' }).click();
-    await expect(page.getByRole('heading', { name: /Room for the data/ })).toBeInViewport();
+    await expect(page.getByRole('link', { name: 'Our approach' })).toHaveAttribute(
+      'href',
+      '/methodology',
+    );
     for (const [href, heading] of [
       ['/resources', 'Resources'],
       ['/methodology', 'Data & methods'],
       ['/about', 'About FARA'],
     ]) {
-      await page.locator(`.home-library-links a[href="${href}"]`).click();
+      await page.getByRole('contentinfo').locator(`a[href="${href}"]`).click();
       await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
@@ -327,6 +341,110 @@ test('homepage introduces FARA and connects the planner and reference pages', as
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/#main$/);
   expect(errors).toEqual([]);
+});
+
+test('the landing composition fits short screens and grows rather than clipping content', async ({
+  page,
+}) => {
+  for (const [width, height] of [
+    [390, 740],
+    [820, 768],
+    [1024, 768],
+    [1280, 720],
+    [1440, 900],
+    [1440, 768],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await expect(
+      page.locator('.hero-actions').getByRole('link', { name: 'Go to planner' }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1),
+    ).toBe(true);
+    await expect(page.getByRole('contentinfo')).toBeInViewport({ ratio: 1 });
+  }
+  await page.setViewportSize({ width: 390, height: 480 });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollHeight > innerHeight)).toBe(true);
+  await page.getByRole('contentinfo').scrollIntoViewIfNeeded();
+  await expect(page.getByRole('contentinfo')).toBeInViewport({ ratio: 1 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('the desktop planner fits laptop screens and keeps its panels usable', async ({
+  page,
+}, testInfo) => {
+  for (const [width, height] of [
+    [1440, 900],
+    [1440, 768],
+    [1280, 720],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/planner');
+    await expect(page.locator('.maplibregl-canvas')).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1),
+    ).toBe(true);
+    const grid = await page.locator('.workspace-grid').boundingBox();
+    const context = await page.locator('.map-context').boundingBox();
+    expect(grid!.y).toBeLessThan(180);
+    expect(context!.y + context!.height).toBeLessThanOrEqual(grid!.y + grid!.height + 1);
+    await expect(page.getByRole('contentinfo')).toBeInViewport({ ratio: 1 });
+    await expect(page.getByRole('button', { name: 'Save & share this plan' })).toBeInViewport({
+      ratio: 1,
+    });
+    await page.getByRole('button', { name: 'Plan a pop-up here' }).scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Plan a pop-up here' })).toBeInViewport({
+      ratio: 1,
+    });
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+    await page.getByRole('tab', { name: 'Event settings' }).click();
+    await expect(page.getByLabel('Event capacity · household slots')).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath(`planner-${width}-${height}.png`),
+      fullPage: true,
+    });
+  }
+});
+
+test('methodology explains the model and keeps full calculations available by keyboard', async ({
+  page,
+}, testInfo) => {
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/methodology');
+    const topics = page.getByRole('navigation', { name: 'Methodology topics' });
+    for (const [name, id] of [
+      ['The model', 'model'],
+      ['Sources & vintages', 'sources'],
+      ['Limits & privacy', 'limits'],
+    ]) {
+      await topics.getByRole('link', { name, exact: true }).click();
+      await expect(page).toHaveURL(new RegExp(`#${id}$`));
+      await expect(page.locator(`#${id}`)).toBeInViewport();
+    }
+    for (const summary of await page.locator('.method-detail > summary').all()) {
+      await summary.focus();
+      await page.keyboard.press('Enter');
+      await expect(summary.locator('..')).toHaveAttribute('open', '');
+      await expect(summary.locator('..').locator('p').first()).toBeVisible();
+    }
+    await expect(page.getByText(/constant variable contributes 0.5/)).toBeVisible();
+    await expect(page.getByText(/Whole-question breakdowns/)).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+      .analyze();
+    expect(results.violations).toEqual([]);
+    await page.screenshot({
+      path: testInfo.outputPath(`methodology-expanded-${width}.png`),
+      fullPage: true,
+    });
+  }
 });
 
 test('nonprofit resources are reachable, readable and usable on desktop and phones', async ({

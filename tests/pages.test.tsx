@@ -53,24 +53,27 @@ describe('crawlable pages and meaningful framework states', () => {
     for (const link of screen.getAllByRole('link', { name: 'Go to planner' })) {
       expect(link).toHaveAttribute('href', '/planner');
     }
-    expect(screen.getByRole('link', { name: 'See how it works' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Our approach' })).toHaveAttribute(
       'href',
-      '#how-it-works',
+      '/methodology',
     );
-    expect(screen.getByRole('heading', { name: /Room for the data/ })).toHaveAttribute(
-      'id',
-      'workflow-title',
-    );
-    expect(screen.getByText('3 Census tracts · 0 SNAP retailer locations')).toBeInTheDocument();
-    expect(screen.getByText('Illustrative test data')).toBeInTheDocument();
+    expect(screen.getByText('3 Census tracts · Illustrative test data')).toBeInTheDocument();
     expect(
       screen.getByRole('img', { name: /Census boundaries/ }).querySelectorAll('path'),
     ).toHaveLength(1);
     expect(screen.getByRole('list', { name: 'Counties in the study area' })).toHaveTextContent(
-      'LakeCountyOrangeCounty',
+      'LakeOrange',
     );
-    for (const href of ['/resources', '/methodology', '/about']) {
-      expect(home.container.querySelector(`.home-library a[href="${href}"]`)).toBeInTheDocument();
+    for (const [href, name] of [
+      ['/resources', 'Resources'],
+      ['/methodology', 'Data & methods'],
+      ['/about', 'About FARA'],
+    ]) {
+      expect(
+        within(screen.getByRole('contentinfo')).getByRole('link', {
+          name,
+        }),
+      ).toHaveAttribute('href', href);
     }
     home.unmount();
     mocks.load.mockResolvedValue({
@@ -78,8 +81,8 @@ describe('crawlable pages and meaningful framework states', () => {
       manifest: { ...dataset.manifest, mode: 'observed' },
     });
     const observed = render(await Home());
-    expect(screen.getByText('Study area preview · 2020 Census boundaries')).toBeInTheDocument();
-    expect(screen.queryByText('Illustrative test data')).not.toBeInTheDocument();
+    expect(screen.getByText('3 Census tracts · 2020 Census boundaries')).toBeInTheDocument();
+    expect(screen.queryByText(/Illustrative test data/)).not.toBeInTheDocument();
     observed.unmount();
     render(await Planner());
     expect(screen.getByText('Planning workspace')).toBeInTheDocument();
