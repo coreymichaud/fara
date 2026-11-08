@@ -12,7 +12,7 @@ The homepage is a single-screen introduction with a Census study-area graphic an
 
 ![FARA desktop planning workspace](docs/screenshots/planner-desktop.png)
 
-Reference pages: [About](docs/screenshots/about-desktop.png) and [Data & methods](docs/screenshots/methodology-desktop.png).
+Reference pages: [About](docs/screenshots/about-desktop.png), [Data & methods](docs/screenshots/methodology-desktop.png), and [Resources](docs/screenshots/resources-desktop.png). Resources also has [phone](docs/screenshots/resources-phone.png), [tablet](docs/screenshots/resources-tablet.png), and [wide desktop](docs/screenshots/resources-wide.png) captures.
 
 Homepage screenshots: [phone](docs/screenshots/home-phone.png), [tablet](docs/screenshots/home-tablet.png), and [wide desktop](docs/screenshots/home-wide.png). Planner screenshots: [phone](docs/screenshots/planner-phone.png), [tablet](docs/screenshots/planner-tablet.png), and [wide desktop](docs/screenshots/planner-wide.png). The desktop planner also fits 1440×900, 1440×768, and 1280×720 laptop screens, with independently scrollable panels. Regenerate these Chromium captures with `npm run test:e2e`.
 

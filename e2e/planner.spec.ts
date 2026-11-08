@@ -452,8 +452,13 @@ test('nonprofit resources are reachable, readable and usable on desktop and phon
 }, testInfo) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
-  for (const width of [1440, 390]) {
-    await page.setViewportSize({ width, height: width === 390 ? 844 : 1080 });
+  for (const [name, width, height] of [
+    ['desktop', 1440, 1080],
+    ['phone', 390, 844],
+    ['tablet', 820, 1180],
+    ['wide', 1920, 1080],
+  ] as const) {
+    await page.setViewportSize({ width, height });
     await page.goto('/');
     const navigation = page.getByRole('navigation', { name: 'Main navigation' });
     const menu = page.getByRole('button', { name: 'Menu', exact: true });
@@ -500,6 +505,14 @@ test('nonprofit resources are reachable, readable and usable on desktop and phon
     }
     const providers = page.locator('.resource-entry h3 a');
     await expect(providers).toHaveCount(16);
+    const entry = page.locator('.resource-entry').first();
+    const owner = await entry.locator('.resource-owner').boundingBox();
+    const description = await entry.locator('.resource-description').boundingBox();
+    if (width >= 1200) {
+      expect(owner!.x + owner!.width).toBeLessThan(description!.x);
+    } else {
+      expect(owner!.y + owner!.height).toBeLessThan(description!.y);
+    }
     expect(
       await providers.evaluateAll((links) =>
         links.every(
@@ -525,6 +538,7 @@ test('nonprofit resources are reachable, readable and usable on desktop and phon
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: testInfo.outputPath(`resources-${width}-viewport.png`) });
     await page.screenshot({ path: testInfo.outputPath(`resources-${width}.png`), fullPage: true });
+    await page.screenshot({ path: `docs/screenshots/resources-${name}.png`, fullPage: true });
   }
   expect(pageErrors).toEqual([]);
 });

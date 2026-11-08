@@ -13,17 +13,15 @@ export const metadata: Metadata = {
 export default function Resources() {
   return (
     <>
-      <main id="main" className="resources-page">
-        <header className="resources-heading">
-          <div className="eyebrow">For nonprofit teams</div>
-          <h1>Resources</h1>
+      <main id="main" className="editorial-page resources-page">
+        <header className="editorial-heading">
+          <div>
+            <p className="eyebrow">For nonprofit teams</p>
+            <h1>Resources</h1>
+          </div>
           <p className="page-lead">
             Practical guidance for running a food program, making a thoughtful referral, and finding
             other organizations working nearby.
-          </p>
-          <p className="resources-reviewed">
-            Links reviewed <time dateTime={resourcesReviewedOn}>November 7, 2026</time>. Provider
-            websites open in a new tab.
           </p>
         </header>
         <div className="resources-layout">
@@ -36,6 +34,10 @@ export default function Resources() {
             ))}
           </nav>
           <div className="resource-sections">
+            <p className="resources-reviewed">
+              Links reviewed <time dateTime={resourcesReviewedOn}>November 7, 2026</time>. Provider
+              websites open in a new tab.
+            </p>
             {resourceSections.map((section) => (
               <section className="resource-section" key={section.id} aria-labelledby={section.id}>
                 <div className="resource-section-heading">
@@ -49,14 +51,16 @@ export default function Resources() {
                         <span>{resource.organization}</span>
                         <span>{resource.coverage}</span>
                       </div>
-                      <h3>
-                        <a href={resource.href} target="_blank" rel="noopener noreferrer">
-                          {resource.title}
-                          <ArrowUpRight size={18} aria-hidden="true" />
-                          <span className="sr-only"> (opens in a new tab)</span>
-                        </a>
-                      </h3>
-                      <p>{resource.description}</p>
+                      <div className="resource-description">
+                        <h3>
+                          <a href={resource.href} target="_blank" rel="noopener noreferrer">
+                            {resource.title}
+                            <ArrowUpRight size={18} aria-hidden="true" />
+                            <span className="sr-only"> (opens in a new tab)</span>
+                          </a>
+                        </h3>
+                        <p>{resource.description}</p>
+                      </div>
                     </li>
                   ))}
                 </ul>

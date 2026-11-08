@@ -1,6 +1,6 @@
 # Verification results
 
-**FARA (Food Access Resource Allocation)** verified locally on **7 November 2026, America/New_York**. The checks below cover the local application and container. Cloud deployment is pending.
+**FARA (Food Access Resource Allocation)** verified locally on **8 November 2026, America/New_York**. The checks below cover the local application and container. Cloud deployment is pending.
 
 ## Checks
 
@@ -49,7 +49,7 @@ E2E_STORAGE_ADAPTER=firestore npm run check
 
 Verified local image tag: `food-access:local`.
 
-Verified local image identity: `sha256:e48059b9edd763d32fb182ab55f02c0cbed94a2076b9c30919df2739f9675ff8` (`linux/amd64`). Artifact Registry push and Cloud Run deployment remain pending.
+Verified local image identity: `sha256:2eda4cc21748ff594e478aa9125687189ebf813fe753341dbe7a2f1685b3c747` (`linux/amd64`). Artifact Registry push and Cloud Run deployment remain pending.
 
 ```sh
 docker build --platform linux/amd64 -t food-access:local .
@@ -68,7 +68,7 @@ The independent Docker allowlist excludes the original source files from every b
 
 ## Browser/performance evidence and limits
 
-Homepage and planner screenshots at all four tested widths, plus the open About and Data & methods layouts, are in [screenshots/](screenshots/). The homepage fits the initial viewport at the four standard sizes and at 390×740, 820×768, 1024×768, 1280×720, 1440×900, and 1440×768. At 390×480 it grows and remains scrollable, so content is not clipped. The desktop planner fits 1440×900, 1440×768, and 1280×720 without page scrolling; its panels, save control, and map assumptions remain accessible. Browser checks exercise the homepage → planner → home journey, links to each reference page, the phone menu, and the existing planning and sharing workflow. The study-area preview is rendered from the same local county boundaries used by the planner. A separate browser inspection of the local production container recorded **no uncaught page errors** and confirmed the explicit unconfigured-persistence error. One unthrottled desktop lab navigation observed LCP 952 ms and CLS 0.00391. See the timestamp/environment and full measurement in [performance.json](performance.json). This is not Lighthouse, a mobile-network test, field p75 Core Web Vitals, or an INP claim. That historical performance sample predates the atlas redesign. The current screenshots and acceptance tests cover the redesign; no new LCP/CLS measurement is claimed.
+Homepage and planner screenshots at all four tested widths, plus the open About, Data & methods, and Resources layouts, are in [screenshots/](screenshots/). The homepage fits the initial viewport at the four standard sizes and at 390×740, 820×768, 1024×768, 1280×720, 1440×900, and 1440×768. At 390×480 it grows and remains scrollable, so content is not clipped. The desktop planner fits 1440×900, 1440×768, and 1280×720 without page scrolling; its panels, save control, and map assumptions remain accessible. Browser checks exercise the homepage → planner → home journey, links to each reference page, the phone menu, and the existing planning and sharing workflow. The study-area preview is rendered from the same local county boundaries used by the planner. A separate browser inspection of the local production container recorded **no uncaught page errors** and confirmed the explicit unconfigured-persistence error. One unthrottled desktop lab navigation observed LCP 952 ms and CLS 0.00391. See the timestamp/environment and full measurement in [performance.json](performance.json). This is not Lighthouse, a mobile-network test, field p75 Core Web Vitals, or an INP claim. That historical performance sample predates the atlas redesign. The current screenshots and acceptance tests cover the redesign; no new LCP/CLS measurement is claimed.
 
 The evidence chart keeps an explicit height when its mobile panel is hidden. Its visually hidden text is positioned within the chart, preventing it from extending the page when the inspector scrolls. Unit and browser checks cover the hidden panel without chart-size warnings, readable axes and tooltip text, and keyboard interaction. Jupyter emits a local-kernel TCP warning during execution; kernels were local and no notebook server was published.
 
@@ -91,3 +91,5 @@ PUBLIC_ACCESS=true bash scripts/deploy-gcp.sh
 That script builds from this local data-holding checkout, tests the image, pushes to Artifact Registry and deploys the exact pushed digest. The cloud steps require an authenticated deployer account. Local preflight, build, and smoke checks passed; the cloud steps have not been run. Project/billing/deploy flag syntax was checked against the official [project creation](https://docs.cloud.google.com/sdk/gcloud/reference/projects/create), [billing linkage](https://docs.cloud.google.com/sdk/gcloud/reference/billing/projects/link), [Firestore creation](https://docs.cloud.google.com/sdk/gcloud/reference/firestore/databases/create), and [Cloud Run deployment](https://docs.cloud.google.com/sdk/gcloud/reference/run/deploy) references.
 
 The Resources page links to official operating guidance, referral tools, and Central Florida organizations. Its source-selection and review process is documented in [resources.md](resources.md).
+
+The Resources refresh was checked at 390×844, 820×1180, 1440×1080, and 1920×1080. Its browser checks cover topic anchors, safe external-link attributes for all 16 entries, provider metadata beside or above entries as appropriate, and zero axe violations at each size. The original link-review date and provider guidance are unchanged.
