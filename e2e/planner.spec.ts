@@ -183,6 +183,14 @@ test('responsive layouts, visible brand styling, accessibility and screenshots',
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: `docs/screenshots/planner-${name}.png`, fullPage: true });
     if (width === 390) {
+      const footer = page.getByRole('contentinfo');
+      const footerBounds = (await footer.boundingBox())!;
+      for (const group of [footer.locator('.footer-branding'), footer.getByRole('navigation')]) {
+        const bounds = (await group.boundingBox())!;
+        expect(
+          Math.abs(bounds.x + bounds.width / 2 - (footerBounds.x + footerBounds.width / 2)),
+        ).toBeLessThanOrEqual(1);
+      }
       for (const name of ['Areas', 'Map', 'Plan']) {
         const bounds = await page.getByRole('button', { name, exact: true }).boundingBox();
         expect(bounds!.height).toBeGreaterThanOrEqual(44);
@@ -192,7 +200,7 @@ test('responsive layouts, visible brand styling, accessibility and screenshots',
         .analyze();
       expect(mobileResults.violations).toEqual([]);
       await page.getByRole('button', { name: 'Plan', exact: true }).click();
-      await expect(page.getByRole('button', { name: 'Save & share this plan' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Save & Share' })).toBeVisible();
       await page.getByRole('button', { name: 'Areas', exact: true }).click();
       await expect(page.getByRole('heading', { name: 'Suggested areas' })).toBeVisible();
       await page.evaluate(() => window.scrollTo(0, 0));
@@ -304,7 +312,7 @@ test('an unavailable basemap has a working local boundary fallback', async ({ pa
   for (const name of ['Areas', 'Map', 'Plan'])
     await expect(page.getByRole('button', { name, exact: true })).toBeInViewport({ ratio: 1 });
   await expect(page.locator('.area-heading h2')).toBeInViewport({ ratio: 1 });
-  await expect(page.getByRole('button', { name: 'Save & share this plan' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Save & Share' })).toBeEnabled();
 });
 
 test('the desktop planner fits laptop screens and keeps its panels usable', async ({
@@ -318,15 +326,21 @@ test('the desktop planner fits laptop screens and keeps its panels usable', asyn
     await page.setViewportSize({ width, height });
     await page.goto('/planner');
     await expect(page.locator('.maplibregl-canvas')).toBeVisible();
-    expect(
-      await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1),
-    ).toBe(true);
+    const main = (await page.getByRole('main').boundingBox())!;
+    expect(main.y + main.height).toBeLessThanOrEqual(height + 1);
     const grid = await page.locator('.workspace-grid').boundingBox();
     const context = await page.locator('.map-context').boundingBox();
     expect(grid!.y).toBeLessThan(180);
     expect(context!.y + context!.height).toBeLessThanOrEqual(grid!.y + grid!.height + 1);
-    await expect(page.getByRole('contentinfo')).toBeInViewport({ ratio: 1 });
-    await expect(page.getByRole('button', { name: 'Save & share this plan' })).toBeInViewport({
+    const panel = page.getByRole('complementary', { name: 'Evidence and plan' });
+    const inspectorBounds = (await panel.locator('.detail-tabs-root').boundingBox())!;
+    const panelBounds = (await panel.boundingBox())!;
+    expect(inspectorBounds.height).toBeCloseTo(panelBounds.height, 0);
+    await expect(panel.getByRole('switch')).toHaveCount(0);
+    await expect(panel.getByRole('button', { name: 'Save & Share' })).toHaveCount(0);
+    await expect(page.getByText('What still needs verification', { exact: true })).toHaveCount(0);
+    await expect(page.getByText(/Observed public indicators/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Save & Share' })).toBeInViewport({
       ratio: 1,
     });
     await page.getByRole('button', { name: 'Plan a pop-up here' }).scrollIntoViewIfNeeded();
@@ -340,5 +354,9 @@ test('the desktop planner fits laptop screens and keeps its panels usable', asyn
       path: testInfo.outputPath(`planner-${width}-${height}.png`),
       fullPage: true,
     });
+    await page.getByRole('contentinfo').scrollIntoViewIfNeeded();
+    const footerBounds = (await page.getByRole('contentinfo').boundingBox())!;
+    expect(footerBounds.y).toBeGreaterThanOrEqual(-1);
+    expect(footerBounds.y + footerBounds.height).toBeLessThanOrEqual(height + 1);
   }
 });

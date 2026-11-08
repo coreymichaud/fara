@@ -1,9 +1,7 @@
 'use client';
 import { useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
 import * as Tabs from '@radix-ui/react-tabs';
-import * as Switch from '@radix-ui/react-switch';
-import { ArrowRight, Info, Save } from 'lucide-react';
+import { Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/footer';
 import { evaluate, initialScenario, rankCandidates, scoreAreas } from '@/lib/domain/planner';
@@ -13,7 +11,7 @@ import { AreaDetails } from './area-details';
 import { EventSettings } from './event-settings';
 import { LocationComparison } from './location-comparison';
 import { PlanningMap } from './planning-map';
-import { SavedPlanLinks } from './saved-plan-links';
+import { SharePlanDialog } from './share-plan-dialog';
 
 export function Workspace({ data }: { data: Dataset }) {
   const [scenario, setScenario] = useState<Scenario>(() => {
@@ -24,9 +22,11 @@ export function Workspace({ data }: { data: Dataset }) {
   const [tab, setTab] = useState('evidence');
   const [mobile, setMobile] = useState('map');
   const [saving, setSaving] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [message, setMessage] = useState('');
   const [saved, setSaved] = useState<{ publicUrl: string; manageUrl: string } | null>(null);
   const detailViewport = useRef<HTMLDivElement>(null);
+  const shareButton = useRef<HTMLButtonElement>(null);
   const scored = useMemo(
     () => scoreAreas(data.areas, scenario.povertyWeight),
     [data.areas, scenario.povertyWeight],
@@ -58,6 +58,7 @@ export function Workspace({ data }: { data: Dataset }) {
   const update = (patch: Partial<Scenario>) => {
     setScenario((s) => ({ ...s, ...patch }));
     setSaved(null);
+    setSharing(false);
     setMessage('');
   };
   const openTab = (value: string) => {
@@ -120,7 +121,11 @@ export function Workspace({ data }: { data: Dataset }) {
     [data.areas, rankingParameters],
   );
   async function save() {
-    const validation = scenarioSchema.safeParse(scenario);
+    if (saved) {
+      setSharing(true);
+      return;
+    }
+    const validation = scenarioSchema.safeParse({ ...scenario, surveyEnabled: true });
     if (!validation.success) {
       setMessage(validation.error.issues[0].message);
       return;
@@ -131,13 +136,14 @@ export function Workspace({ data }: { data: Dataset }) {
       const response = await fetch('/api/plans', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(scenario),
+        body: JSON.stringify(validation.data),
       });
       const payload = (await response.json()) as { id: string; token: string; error?: string };
       if (!response.ok) throw new Error(payload.error ?? 'Plan could not be saved');
       const publicUrl = `${window.location.origin}/plans/${payload.id}`;
       const manageUrl = `${publicUrl}/manage#token=${payload.token}`;
       setSaved({ publicUrl, manageUrl });
+      setSharing(true);
       try {
         localStorage.setItem(`management:${payload.id}`, payload.token);
       } catch {
@@ -156,17 +162,29 @@ export function Workspace({ data }: { data: Dataset }) {
       <main id="main" className="workspace">
         <div className="workspace-heading">
           <h1>Pantry Planner</h1>
-          <div className="workspace-meta">
-            <span className={data.manifest.mode === 'illustrative' ? 'illustrative' : ''}>
-              {data.manifest.mode === 'illustrative'
-                ? 'Illustrative test data'
-                : 'Observed public indicators'}
-              <span className="meta-divider"> / </span>
-              {data.manifest.geography.length} counties · {data.areas.length} tracts
-            </span>
-            <Link href="/methodology">2020–2025 source years & methods</Link>
+          <div className="workspace-actions">
+            <Button
+              ref={shareButton}
+              variant="accent"
+              onClick={save}
+              disabled={saving || selected.priority === null}
+              aria-haspopup="dialog"
+              aria-expanded={sharing}
+              aria-controls={sharing ? 'plan-sharing-dialog' : undefined}
+            >
+              <Share2 size={16} aria-hidden="true" />
+              {saving ? 'Saving the plan…' : 'Save & Share'}
+            </Button>
+            {message && !saved && (
+              <p className="save-message" role="status">
+                {message}
+              </p>
+            )}
           </div>
         </div>
+        {data.manifest.mode === 'illustrative' && (
+          <p className="illustrative workspace-data-notice">Illustrative test data</p>
+        )}
         <div id="workspace-navigation" className="mobile-tabs" aria-label="Workspace sections">
           {['areas', 'map', 'plan'].map((mode) => (
             <button key={mode} aria-pressed={mobile === mode} onClick={() => openSection(mode)}>
@@ -242,57 +260,16 @@ export function Workspace({ data }: { data: Dataset }) {
                 />
               </Tabs.Content>
             </Tabs.Root>
-            <section className="save-section">
-              <label className="survey-toggle">
-                <Switch.Root
-                  className="switch"
-                  checked={scenario.surveyEnabled}
-                  onCheckedChange={(checked) => update({ surveyEnabled: checked })}
-                  aria-label="Include anonymous community check-in"
-                >
-                  <Switch.Thumb className="switch-thumb" />
-                </Switch.Root>
-                <span>
-                  Include anonymous community check-in
-                  <small>Ask whether this location and time work.</small>
-                </span>
-              </label>
-              <Button
-                variant="accent"
-                className="full-width"
-                onClick={save}
-                disabled={saving || selected.priority === null}
-              >
-                <Save size={16} />
-                {saving ? 'Saving the snapshot…' : 'Save & share this plan'}
-                <ArrowRight size={16} />
-              </Button>
-              {message && !saved && (
-                <p className="save-message" role="status">
-                  {message}
-                </p>
-              )}
-            </section>
-            <details className="caveats">
-              <summary>
-                <Info size={14} /> What still needs verification
-              </summary>
-              <ul>
-                <li>Venue permission, safety, accessibility, and actual community demand.</li>
-                <li>Existing pantry services, costs, and operating capacity.</li>
-                <li>Mixed source years and uncertainty in tract estimates.</li>
-                <li>One retailer with inconsistent coordinates was excluded.</li>
-              </ul>
-            </details>
           </aside>
         </div>
-        {saved && (
-          <SavedPlanLinks
+        {saved && sharing && (
+          <SharePlanDialog
             key={saved.publicUrl}
             publicUrl={saved.publicUrl}
             manageUrl={saved.manageUrl}
-            surveyEnabled={scenario.surveyEnabled}
             notice={message}
+            returnFocusRef={shareButton}
+            onClose={() => setSharing(false)}
           />
         )}
       </main>

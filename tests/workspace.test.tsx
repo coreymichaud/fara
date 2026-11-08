@@ -34,12 +34,21 @@ describe('working planning controls', () => {
     const fetcher = vi.fn().mockReturnValue(request);
     vi.stubGlobal('fetch', fetcher);
     render(<Workspace data={dataset} />);
-    await user.click(screen.getByRole('button', { name: 'Save & share this plan' }));
-    expect(screen.getByRole('button', { name: 'Saving the snapshot…' })).toBeDisabled();
+    const panel = screen.getByRole('complementary', { name: 'Evidence and plan' });
+    const saveButton = screen.getByRole('button', { name: 'Save & Share' });
+    expect(within(panel).queryByRole('switch')).not.toBeInTheDocument();
+    expect(panel).not.toContainElement(saveButton);
+    expect(screen.queryByText('What still needs verification')).not.toBeInTheDocument();
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Save & Share' }));
+    expect(screen.getByRole('button', { name: 'Saving the plan…' })).toBeDisabled();
     expect(screen.queryByRole('region', { name: 'Your plan is saved' })).not.toBeInTheDocument();
+    screen.getByLabelText('Study area').focus();
     complete({ ok: true, json: async () => ({ id: 'new-plan', token: 'private-token' }) });
     expect(await screen.findByRole('region', { name: 'Your plan is saved' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Save & share this plan' })).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: 'Close sharing options' }));
+    expect(saveButton).toBeEnabled();
+    expect(saveButton).toHaveFocus();
     expect(fetcher).toHaveBeenCalledOnce();
   });
 
@@ -212,20 +221,20 @@ describe('working planning controls', () => {
     render(<Workspace data={dataset} />);
     await user.click(screen.getByRole('tab', { name: 'Event settings' }));
     await user.clear(screen.getByLabelText('Plan title'));
-    await user.click(screen.getByRole('button', { name: 'Save & share this plan' }));
+    await user.click(screen.getByRole('button', { name: 'Save & Share' }));
     expect(await screen.findByRole('status')).toHaveTextContent(/Too small/);
     expect(fetcher).not.toHaveBeenCalled();
     await user.type(screen.getByLabelText('Plan title'), 'Community proposal');
     await user.type(screen.getByLabelText(/Operator note/), 'Verify venue');
-    await user.click(screen.getByRole('switch'));
-    await user.click(screen.getByRole('button', { name: 'Save & share this plan' }));
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Save & Share' }));
     expect(await screen.findByRole('heading', { name: 'Your plan is saved' })).toHaveFocus();
     expect(JSON.parse(fetcher.mock.calls[0][1].body)).toMatchObject({
       title: 'Community proposal',
       note: 'Verify venue',
-      surveyEnabled: false,
+      surveyEnabled: true,
     });
-    expect(screen.getByLabelText('Public Plan Link')).toHaveValue(
+    expect(screen.getByLabelText('Saved Plan Link')).toHaveValue(
       'http://localhost:3000/plans/plan-id',
     );
     expect(screen.getByLabelText('Private Dashboard Link')).toHaveValue(
@@ -236,23 +245,30 @@ describe('working planning controls', () => {
       'href',
       expect.stringContaining('#token=private-token'),
     );
-    for (const name of ['Share Your Plan', 'Your Private Dashboard']) {
+    for (const name of ['Your Saved Plan', 'Your Private Dashboard']) {
       const section = screen.getByRole('region', { name });
       expect(section).toBeVisible();
       expect(section.closest('details')).toBeNull();
     }
+    const publicUrl = (screen.getByLabelText('Saved Plan Link') as HTMLInputElement).value;
+    await user.click(screen.getByRole('button', { name: 'Close sharing options' }));
     for (const mode of ['Map', 'Areas', 'Plan']) {
       await user.click(screen.getByRole('button', { name: mode }));
+      await user.click(screen.getByRole('button', { name: 'Save & Share' }));
       expect(screen.getByRole('region', { name: 'Your Private Dashboard' })).toBeVisible();
+      expect(screen.getByLabelText('Saved Plan Link')).toHaveValue(publicUrl);
+      await user.click(screen.getByRole('button', { name: 'Close sharing options' }));
     }
+    expect(fetcher).toHaveBeenCalledOnce();
+    await user.type(screen.getByLabelText('Plan title'), ' revised');
     fetcher.mockResolvedValueOnce({
       ok: false,
       json: async () => ({ error: 'Firestore unavailable' }),
     });
-    await user.click(screen.getByRole('button', { name: 'Save & share this plan' }));
+    await user.click(screen.getByRole('button', { name: 'Save & Share' }));
     expect(await screen.findByText('Firestore unavailable')).toHaveAttribute('role', 'status');
     fetcher.mockRejectedValueOnce('network');
-    await user.click(screen.getByRole('button', { name: 'Save & share this plan' }));
+    await user.click(screen.getByRole('button', { name: 'Save & Share' }));
     expect(await screen.findByText('Save failed. Please try again.')).toHaveAttribute(
       'role',
       'status',
@@ -273,7 +289,7 @@ describe('working planning controls', () => {
     expect(screen.getByText(/Illustrative test data/)).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText('Data availability'), 'missing');
     expect(screen.getByText(/Some indicators are missing/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Save & share this plan' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Save & Share' })).toBeDisabled();
     await user.selectOptions(screen.getByLabelText('Data availability'), 'comparable');
     expect(screen.getByText(/No areas match/)).toBeInTheDocument();
   });
@@ -290,18 +306,21 @@ it('keeps saved access recoverable when browser storage or clipboard is unavaila
   });
   vi.stubGlobal('fetch', fetcher);
   render(<Workspace data={{ ...dataset, manifest: { ...dataset.manifest, mode: 'observed' } }} />);
-  expect(screen.getByText(/Observed public indicators/)).toBeInTheDocument();
-  await user.click(screen.getByRole('button', { name: 'Save & share this plan' }));
+  expect(screen.queryByText(/Observed public indicators/)).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Save & Share' }));
   expect(await screen.findByText(/Browser storage is unavailable/)).toHaveAttribute(
     'role',
     'status',
   );
   vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(new Error('clipboard blocked'));
-  await user.click(screen.getByRole('button', { name: 'Copy Public Link' }));
+  await user.click(screen.getByRole('button', { name: 'Copy Plan Link' }));
   expect(await screen.findByText(/Clipboard unavailable/)).toHaveAttribute('role', 'status');
   expect(screen.getByRole('link', { name: 'View Survey Results' })).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Close sharing options' }));
+  await user.click(screen.getByRole('tab', { name: 'Event settings' }));
+  await user.type(screen.getByLabelText('Plan title'), ' revised');
   fetcher.mockResolvedValueOnce({ ok: false, json: async () => ({}) });
-  await user.click(screen.getByRole('button', { name: 'Save & share this plan' }));
+  await user.click(screen.getByRole('button', { name: 'Save & Share' }));
   expect(await screen.findByText('Plan could not be saved')).toHaveAttribute('role', 'status');
 });
 

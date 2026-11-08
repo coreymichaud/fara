@@ -18,7 +18,7 @@ FARA follows the questions a planner actually has to answer:
 
 You can adjust the priority weights and test different assumptions. Recommendations recalculate from the same published data; there's no generative AI or opaque prediction behind the ranking.
 
-FARA also includes a **Resources** directory with food-program guidance, referral tools, and organizations serving Central Florida. Resources, Data & Methods, and About use plain title-only page headings and show all explanations without expandable sections. The Resources and Data & Methods contents lists highlight the current topic while scrolling and support ordinary keyboard-accessible section links.
+FARA also includes a **Resources** directory with food-program guidance, referral tools, and organizations serving Central Florida. Resources, Data & Methods, and About use plain title-only page headings and show all explanations without expandable sections. On screens wider than 700px, the Resources and Data & Methods contents lists highlight the current topic while scrolling and support ordinary keyboard-accessible section links. Phones show the content directly, with no table of contents and a centered footer across all three reference pages.
 
 ## Where it works
 
@@ -83,10 +83,12 @@ The pipeline creates the minimized web assets and checks the joins, geometries, 
 The planner provides separate links for each audience:
 
 - A **public, read-only plan** with the full proposal, planning estimates, assumptions, and alternatives.
-- A **community survey**, when check-in is enabled, with just the proposed location, time, and existing four anonymous questions.
+- A **community survey** with just the proposed location, time, and existing four anonymous questions.
 - A **private creator link** for managing the proposal and seeing aggregated responses.
 
-After saving, a compact sharing strip appears **below** the workspace and receives keyboard focus. It leaves the planner's position, height, and scrolling panels unchanged. **Share Your Plan**, **Community Check-in**, and **Your Private Dashboard** each have an open action, a copy button with its own confirmation, and a selectable URL for manual copying. The survey link is omitted when check-in was not enabled. On phones the links stack; on larger screens they sit side by side.
+Use **Save & Share** at the top right of the planner to save the proposal and open its sharing popup. **Your Saved Plan** is the primary, full-width section: keep that public link to revisit the saved proposal, or share it with partners. **Community Survey** and **Your Private Dashboard** sit underneath it, with open actions, copy confirmations, and selectable URLs. All three open actions launch a new tab so the planner stays open. Every newly saved plan includes a survey link; using or sharing that link is optional. Creators can still close or reopen the check-in from their dashboard.
+
+The popup keeps the private-link reminder visible and supports keyboard navigation. Close it with the X, Escape, or a click or tap outside; focus returns to Save & Share. Clicking its content or dragging from inside keeps it open. Reopening it keeps the same links without saving a duplicate plan. Editing the proposal makes the next Save & Share create a new saved snapshot. The planner stays at its full size behind the popup, with no bottom save bar or verification disclosure.
 
 The public plan lives at `/plans/{id}`, the participant survey at `/plans/{id}/survey`, and the private dashboard at `/plans/{id}/manage`. The organizer's detailed plan has no survey prompt or check-in section. Share the separate survey link with participants: it opens a standalone form with a small FARA label and no website navigation or footer, and retains an optional link to the full proposal. Closing or reopening the check-in through the creator dashboard controls the survey page and submissions through the existing API.
 
@@ -102,7 +104,7 @@ The full walkthrough—including the two service accounts, IAM roles, bucket lay
 
 The app uses Next.js, TypeScript, React, MapLibre, and Firestore. The data pipeline lives in `analysis/`; the planning calculations live in `src/lib/domain/`.
 
-The planner's shared proposal state and save flow live in `src/features/planner/workspace.tsx`. Its area explorer, map, evidence, event settings, and location comparison are separate components in the same directory. The homepage SVG lives in `src/features/home/study-atlas.tsx`. Styles are grouped by feature in `src/app/styles/`, imported through `globals.css` with shared breakpoint overrides last. Browser tests are organized into home, reference, planner, and sharing journeys in `e2e/`.
+The planner's shared proposal state and save flow live in `src/features/planner/workspace.tsx`. Its area explorer, map, evidence, event settings, and location comparison are separate components in the same directory. The sharing popup and link sections live in `share-plan-dialog.tsx` and `saved-plan-links.tsx` in that directory. The homepage SVG lives in `src/features/home/study-atlas.tsx`. Styles are grouped by feature in `src/app/styles/`, imported through `globals.css` with shared breakpoint overrides last. Browser tests are organized into home, reference, planner, and sharing journeys in `e2e/`.
 
 For the fast checks:
 

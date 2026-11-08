@@ -42,6 +42,7 @@
 html {
   /* Keep the shared masthead steady when a page gains a vertical scrollbar. */
   overflow-y: scroll;
+  scrollbar-gutter: stable;
 }
 body {
   margin: 0;

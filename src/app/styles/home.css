@@ -27,6 +27,11 @@ body:has(> .workspace) .site-footer {
   position: relative;
   z-index: 1;
 }
+@media (min-width: 1200px) {
+  .home-hero {
+    padding-inline-start: 32px;
+  }
+}
 .home-hero .eyebrow {
   color: var(--blue);
   margin-bottom: 20px;

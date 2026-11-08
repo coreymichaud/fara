@@ -4,7 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 test('reference pages match Resources and stay expanded; atlas metadata stays on one line', async ({
   page,
 }, testInfo) => {
-  for (const width of [320, 390, 820, 1024, 1440, 1920]) {
+  for (const width of [320, 390, 700, 701, 820, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Put your next pantry');
@@ -47,6 +47,25 @@ test('reference pages match Resources and stay expanded; atlas metadata stays on
       await expect(header.locator(':scope > h1')).toHaveCount(1);
       await expect(header.locator(':scope > :not(h1)')).toHaveCount(0);
       await expect(header).toHaveText(heading);
+      const contents = page.locator('main .page-contents');
+      if (path === '/about') {
+        await expect(contents).toHaveCount(0);
+      } else if (width <= 700) {
+        await expect(contents).toBeHidden();
+        await expect(page.getByRole('navigation', { name: /topics/ })).toHaveCount(0);
+      } else {
+        await expect(contents).toBeVisible();
+      }
+      if (width <= 700) {
+        const footer = page.getByRole('contentinfo');
+        const footerBounds = (await footer.boundingBox())!;
+        for (const group of [footer.locator('.footer-branding'), footer.getByRole('navigation')]) {
+          const bounds = (await group.boundingBox())!;
+          expect(
+            Math.abs(bounds.x + bounds.width / 2 - (footerBounds.x + footerBounds.width / 2)),
+          ).toBeLessThanOrEqual(1);
+        }
+      }
       if (path === '/resources') {
         await expect(page.getByText(/Links reviewed/)).toHaveCount(0);
         const summary = page.locator('#operations').locator('..').locator('p');
@@ -91,8 +110,16 @@ test('reference pages match Resources and stay expanded; atlas metadata stays on
           ).toBeGreaterThanOrEqual(12);
         }
       }
-      for (const paragraph of await page.locator('main p').all())
-        await expect(paragraph).toBeVisible();
+      for (const paragraph of await page.locator('main p').all()) {
+        if (
+          width <= 700 &&
+          (await paragraph.evaluate((element) => !!element.closest('.page-contents')))
+        ) {
+          await expect(paragraph).toBeHidden();
+        } else {
+          await expect(paragraph).toBeVisible();
+        }
+      }
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
       );
@@ -144,8 +171,8 @@ test('Data & Methods stays on one line in the page title and footer', async ({
 
 test('page contents highlight the current topic while scrolling, resizing and following anchors', async ({
   page,
-}) => {
-  for (const width of [390, 1440]) {
+}, testInfo) => {
+  for (const width of [701, 820, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     for (const [path, label, ids] of [
       ['/resources', 'Resource topics', ['operations', 'referrals', 'local-network']],
@@ -158,6 +185,19 @@ test('page contents highlight the current topic while scrolling, resizing and fo
         'aria-current',
         'location',
       );
+      for (const link of await contents.getByRole('link').all()) {
+        const centerOffset = await link.evaluate((element) => {
+          const range = document.createRange();
+          range.selectNodeContents(element);
+          const text = range.getBoundingClientRect();
+          const box = element.getBoundingClientRect();
+          return Math.abs(text.top + text.height / 2 - (box.top + box.height / 2));
+        });
+        expect(centerOffset).toBeLessThanOrEqual(1);
+      }
+      await contents.screenshot({
+        path: testInfo.outputPath(`contents-${path.slice(1)}-${width}.png`),
+      });
       for (const id of ids.slice(1)) {
         await page
           .locator(`#${id}`)
@@ -203,8 +243,13 @@ test('methodology shows the full model and privacy explanations without disclosu
       ['Sources & vintages', 'sources'],
       ['Limits & privacy', 'limits'],
     ]) {
-      await topics.getByRole('link', { name, exact: true }).click();
-      await expect(page).toHaveURL(new RegExp(`#${id}$`));
+      if (width > 700) {
+        await topics.getByRole('link', { name, exact: true }).click();
+        await expect(page).toHaveURL(new RegExp(`#${id}$`));
+      } else {
+        await expect(topics).toHaveCount(0);
+        await page.locator(`#${id}`).scrollIntoViewIfNeeded();
+      }
       await expect(page.locator(`#${id}`)).toBeInViewport();
     }
     await expect(page.locator('main details, main summary')).toHaveCount(0);
@@ -280,8 +325,13 @@ test('nonprofit resources are reachable, readable and usable on desktop and phon
       ['Make a referral', 'referrals'],
       ['Central Florida organizations', 'local-network'],
     ]) {
-      await topics.getByRole('link', { name: title }).click();
-      await expect(page).toHaveURL(new RegExp(`/resources#${id}$`));
+      if (width > 700) {
+        await topics.getByRole('link', { name: title }).click();
+        await expect(page).toHaveURL(new RegExp(`/resources#${id}$`));
+      } else {
+        await expect(topics).toHaveCount(0);
+        await page.locator(`#${id}`).scrollIntoViewIfNeeded();
+      }
       await expect(page.getByRole('heading', { name: title, exact: true })).toBeInViewport();
     }
     const providers = page.locator('.resource-entry h3 a');

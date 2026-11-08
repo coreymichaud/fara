@@ -11,21 +11,22 @@
   gap: 24px;
   margin-bottom: 12px;
 }
-.workspace-meta {
+.workspace-actions {
   display: flex;
   flex-direction: column;
-  align-items: end;
-  gap: 3px;
-  font-size: var(--secondary);
-  color: var(--gray-500);
+  align-items: flex-end;
+  gap: 8px;
+  margin-left: auto;
 }
-.workspace-meta a {
-  min-height: 32px;
-  align-content: center;
+.workspace-actions > .button {
+  white-space: nowrap;
 }
-.meta-divider {
-  color: var(--muted-blue);
-  margin: 0 6px;
+.workspace-actions .save-message {
+  max-width: 380px;
+  margin: 0;
+}
+.workspace-data-notice {
+  margin-bottom: 12px;
 }
 .eyebrow {
   color: var(--gray-500);

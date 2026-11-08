@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Check, Copy, LockKeyhole } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, Copy, LockKeyhole } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 type LinkKind = 'public' | 'survey' | 'private';
@@ -9,15 +9,12 @@ type LinkKind = 'public' | 'survey' | 'private';
 export function SavedPlanLinks({
   publicUrl,
   manageUrl,
-  surveyEnabled,
   notice,
 }: {
   publicUrl: string;
   manageUrl: string;
-  surveyEnabled: boolean;
   notice: string;
 }) {
-  const heading = useRef<HTMLHeadingElement>(null);
   const [copyStatus, setCopyStatus] = useState({ public: '', survey: '', private: '' });
   const links: {
     kind: LinkKind;
@@ -30,26 +27,23 @@ export function SavedPlanLinks({
   }[] = [
     {
       kind: 'public',
-      heading: 'Share Your Plan',
-      description: 'Public · full proposal for partners and collaborators.',
-      label: 'Public Plan Link',
+      heading: 'Your Saved Plan',
+      description:
+        'Public · keep this link to revisit your saved proposal, or share it with partners.',
+      label: 'Saved Plan Link',
       url: publicUrl,
-      action: 'Open Public Plan',
-      copyLabel: 'Copy Public Link',
+      action: 'Open Saved Plan',
+      copyLabel: 'Copy Plan Link',
     },
-    ...(surveyEnabled
-      ? [
-          {
-            kind: 'survey' as const,
-            heading: 'Community Check-in',
-            description: 'Public · a short survey for community members.',
-            label: 'Survey Link',
-            url: `${publicUrl}/survey`,
-            action: 'Open Survey',
-            copyLabel: 'Copy Survey Link',
-          },
-        ]
-      : []),
+    {
+      kind: 'survey',
+      heading: 'Community Survey',
+      description: 'Share this link when you want community feedback.',
+      label: 'Survey Link',
+      url: `${publicUrl}/survey`,
+      action: 'Open Survey',
+      copyLabel: 'Copy Survey Link',
+    },
     {
       kind: 'private',
       heading: 'Your Private Dashboard',
@@ -61,18 +55,12 @@ export function SavedPlanLinks({
     },
   ];
 
-  useEffect(() => {
-    // The sharing strip follows the workspace so it never reduces the planning area.
-    heading.current!.focus({ preventScroll: true });
-    heading.current!.scrollIntoView({ block: 'start' });
-  }, []);
-
   async function copy(value: string, kind: LinkKind) {
     let message: string;
     try {
       await navigator.clipboard.writeText(value);
       const confirmations = {
-        public: 'Public link copied.',
+        public: 'Plan link copied.',
         survey: 'Survey link copied.',
         private: 'Private dashboard link copied.',
       };
@@ -85,18 +73,19 @@ export function SavedPlanLinks({
 
   return (
     <section className="saved-plan" aria-labelledby="saved-plan-heading">
-      <h2 id="saved-plan-heading" className="saved-plan-title" ref={heading} tabIndex={-1}>
-        <Check size={20} aria-hidden="true" /> Your plan is saved
-      </h2>
+      <span id="plan-links-new-tab" className="sr-only">
+        Opens in a new tab.
+      </span>
       {notice && (
         <p className="save-message" role="status">
           {notice}
         </p>
       )}
-      <div className="saved-plan-links" data-link-count={links.length}>
+      <div className="saved-plan-links">
         {links.map((link) => (
           <section
             className="saved-link-section"
+            data-kind={link.kind}
             key={link.kind}
             aria-labelledby={`saved-${link.kind}-heading`}
           >
@@ -110,17 +99,23 @@ export function SavedPlanLinks({
               <input readOnly value={link.url} onFocus={(event) => event.target.select()} />
             </label>
             <div className="saved-link-actions">
-              <Button asChild variant={link.kind === 'private' ? 'default' : 'secondary'}>
-                <a href={link.url}>
-                  {link.action} <ArrowRight size={14} aria-hidden="true" />
-                </a>
-              </Button>
               <Button
-                variant="ghost"
+                variant={link.kind === 'public' ? 'accent' : 'ghost'}
                 aria-label={link.copyLabel}
                 onClick={() => void copy(link.url, link.kind)}
               >
-                <Copy size={14} aria-hidden="true" /> Copy
+                <Copy size={14} aria-hidden="true" />{' '}
+                {link.kind === 'public' ? 'Copy Plan Link' : 'Copy'}
+              </Button>
+              <Button asChild variant="secondary">
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-describedby="plan-links-new-tab"
+                >
+                  {link.action} <ArrowRight size={14} aria-hidden="true" />
+                </a>
               </Button>
             </div>
             <p className="saved-copy-status" role="status" aria-atomic="true">
