@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-11-08T00:39:56.713Z",
+  "environment": "Local linux/amd64 Node 24 production container on Apple Silicon; Chromium desktop 1440×1080, no throttling, one lab navigation, live external basemap",
+  "lcpMs": 952,
+  "cls": 0.003910973066165124,
+  "domContentLoadedMs": 674.6000000238419,
+  "responseEndMs": 590.5,
+  "resourceCount": 28,
+  "sameOriginTransferBytes": 855105,
+  "mapHeight": 726,
+  "uncaughtBrowserErrors": [],
+  "limitations": "This single local lab sample is not field Core Web Vitals, p75, INP, Lighthouse, a mobile-network benchmark, or a performance guarantee."
+}
