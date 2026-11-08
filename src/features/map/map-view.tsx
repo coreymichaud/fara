@@ -14,7 +14,7 @@ export type MapProps = {
   areas: ScoredArea[];
   scenario: Scenario;
   included: string[];
-  baseline: boolean;
+  showProposal: boolean;
   showRetailers: boolean;
   onSelect: (id: string) => void;
   onMove: (coordinates: [number, number]) => void;

@@ -6,15 +6,10 @@ export default async function Methodology() {
   return (
     <>
       <main id="main" className="reading-page">
-        <div className="eyebrow">METHOD & SOURCES</div>
-        <h1>
-          Useful signals.
-          <br />
-          Visible assumptions.
-        </h1>
+        <div className="eyebrow">Planning reference</div>
+        <h1>Data & methods</h1>
         <p className="page-lead">
-          A transparent model to help choose where to investigate a mobile pantry event in Central
-          Florida.
+          Sources, calculations, and limitations behind the Central Florida planning map.
         </p>
         <section>
           <h2>Start with the geography</h2>
@@ -145,7 +140,7 @@ export default async function Methodology() {
             nonzero cell is under 5. Anonymous responses cannot guarantee uniqueness.
           </p>
         </section>
-        <Link href="/">← Back to the planning workspace</Link>
+        <Link href="/">Back to the planner</Link>
       </main>
       <Footer />
     </>

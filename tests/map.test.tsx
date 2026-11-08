@@ -11,7 +11,11 @@ type MapStub = {
   setFeatureState: ReturnType<typeof vi.fn>;
   remove: ReturnType<typeof vi.fn>;
 };
-type MarkerStub = { events: Record<string, Listener>; setLngLat: ReturnType<typeof vi.fn> };
+type MarkerStub = {
+  events: Record<string, Listener>;
+  setLngLat: ReturnType<typeof vi.fn>;
+  getElement: () => HTMLElement;
+};
 const state = vi.hoisted(() => ({
   maps: [] as MapStub[],
   markers: [] as MarkerStub[],
@@ -53,8 +57,13 @@ vi.mock('maplibre-gl', () => ({
   Marker: class {
     events: Record<string, Listener> = {};
     setLngLat = vi.fn(() => this);
-    constructor() {
+    element: HTMLElement;
+    constructor({ element }: { element: HTMLElement }) {
+      this.element = element;
       state.markers.push(this);
+    }
+    getElement() {
+      return this.element;
     }
     addTo() {
       return this;
@@ -144,7 +153,7 @@ function setup(overrides: Partial<MapProps> = {}) {
     areas: scoreAreas(areas, 50),
     scenario,
     included: [areas[0].id],
-    baseline: false,
+    showProposal: true,
     showRetailers: false,
     onSelect: vi.fn(),
     onMove: vi.fn(),
@@ -164,6 +173,8 @@ describe('MapLibre integration boundary and honest local fallback', () => {
       map = state.maps[0];
     emit(map, 'load');
     await waitFor(() => expect(map.data.setData).toHaveBeenCalled());
+    expect(screen.queryByText('Census 2020 boundaries · USDA ERS')).not.toBeInTheDocument();
+    expect(state.markers[0].getElement().style.display).toBe('');
     expect(map.setFeatureState).toHaveBeenCalledWith(
       { source: 'tracts', id: areas[0].id },
       { priority: 0, included: true, inScope: true },
@@ -187,7 +198,7 @@ describe('MapLibre integration boundary and honest local fallback', () => {
     view.rerender(
       <MapClient
         {...props}
-        baseline
+        showProposal={false}
         showRetailers
         scenario={{ ...scenario, county: 'Orange' }}
         areas={[{ ...props.areas[0], priority: null }, ...props.areas.slice(1)]}
@@ -195,13 +206,39 @@ describe('MapLibre integration boundary and honest local fallback', () => {
     );
     expect(map.setLayoutProperty).toHaveBeenCalledWith('retailers', 'visibility', 'visible');
     expect(map.setLayoutProperty).toHaveBeenCalledWith('catchment-fill', 'visibility', 'none');
+    expect(map.setLayoutProperty).toHaveBeenCalledWith('catchment-line', 'visibility', 'none');
+    expect(map.setLayoutProperty).toHaveBeenCalledWith('included', 'visibility', 'none');
+    expect(state.markers[0].getElement()).toHaveStyle({ display: 'none' });
+    expect(map.setFeatureState).toHaveBeenCalledWith(
+      { source: 'tracts', id: areas[0].id },
+      { priority: null, included: false, inScope: true },
+    );
     emit(map, 'mousemove:tract-fill', {
       features: [{ properties: { id: areas[0].id } }],
       lngLat: {},
     });
     expect(state.popup).toHaveBeenLastCalledWith(expect.stringContaining('Insufficient data'));
+    view.rerender(<MapClient {...props} showRetailers />);
+    expect(state.markers[0].getElement().style.display).toBe('');
+    expect(map.setLayoutProperty).toHaveBeenCalledWith('included', 'visibility', 'visible');
+    expect(map.setLayoutProperty).toHaveBeenLastCalledWith('retailers', 'visibility', 'visible');
     view.unmount();
     expect(map.remove).toHaveBeenCalledOnce();
+  });
+  it('starts with the proposal hidden without disabling tract selection or retailer points', async () => {
+    const props = setup({ showProposal: false, showRetailers: true });
+    const view = render(<MapClient {...props} />);
+    const map = state.maps[0];
+    emit(map, 'load');
+    expect(state.markers[0].getElement()).toHaveStyle({ display: 'none' });
+    expect(map.setLayoutProperty).toHaveBeenCalledWith('catchment-fill', 'visibility', 'none');
+    expect(map.setLayoutProperty).toHaveBeenCalledWith('included', 'visibility', 'none');
+    expect(map.setLayoutProperty).toHaveBeenCalledWith('retailers', 'visibility', 'visible');
+    emit(map, 'click:tract-fill', { features: [{ properties: { id: areas[1].id } }] });
+    expect(props.onSelect).toHaveBeenCalledWith(areas[1].id);
+    view.rerender(<MapClient {...props} showProposal />);
+    expect(state.markers[0].getElement().style.display).toBe('');
+    expect(map.setLayoutProperty).toHaveBeenCalledWith('catchment-fill', 'visibility', 'visible');
   });
   it('automatically offers real Census polygons when WebGL or the basemap fails', async () => {
     const props = setup({
@@ -210,6 +247,8 @@ describe('MapLibre integration boundary and honest local fallback', () => {
     state.throw = true;
     const view = render(<MapClient {...props} />);
     expect(await screen.findByLabelText(/Census tract boundaries/)).toBeInTheDocument();
+    expect(screen.getByText('Census 2020 boundaries · USDA ERS')).toBeInTheDocument();
+    expect(screen.queryByText(/OpenFreeMap/)).not.toBeInTheDocument();
     expect(view.container.querySelectorAll('path')).toHaveLength(2);
     fireEvent.click(view.container.querySelector('path')!);
     expect(props.onSelect).toHaveBeenCalledWith(areas[0].id);
@@ -263,7 +302,7 @@ describe('MapLibre integration boundary and honest local fallback', () => {
   });
 });
 
-it('keeps county filters, baseline overlays and retailer controls functional in fallback mode', async () => {
+it('keeps county filters and retailer points independent of the proposal overlay in fallback mode', async () => {
   const props = setup();
   state.throw = true;
   const points = {
@@ -288,12 +327,26 @@ it('keeps county filters, baseline overlays and retailer controls functional in 
   );
   expect(await screen.findByText('Fixture public retailer')).toBeInTheDocument();
   expect(view.container.querySelector('ellipse')).toBeInTheDocument();
+  expect(view.container.querySelectorAll('circle')).toHaveLength(2);
+  expect(view.container.querySelector('path')).toHaveAttribute('stroke', '#c16a08');
   view.rerender(
-    <MapClient {...props} showRetailers baseline scenario={{ ...scenario, county: 'Lake' }} />,
+    <MapClient
+      {...props}
+      showRetailers
+      showProposal={false}
+      scenario={{ ...scenario, county: 'Lake' }}
+    />,
   );
   expect(view.container.querySelector('ellipse')).not.toBeInTheDocument();
+  expect(view.container.querySelectorAll('circle')).toHaveLength(1);
+  expect(screen.getByText('Fixture public retailer')).toBeInTheDocument();
+  expect(view.container.querySelector('path')).toHaveAttribute('stroke', '#fff');
+  expect(view.container.querySelector('path')).toHaveAttribute('stroke-width', '0.6');
   expect(view.container.querySelector('path')).toHaveAttribute('opacity', '0.2');
   view.rerender(<MapClient {...props} />);
+  expect(view.container.querySelector('ellipse')).toBeInTheDocument();
+  expect(view.container.querySelectorAll('circle')).toHaveLength(1);
+  expect(screen.queryByText('Fixture public retailer')).not.toBeInTheDocument();
   fetcher.mockResolvedValueOnce({ ok: false });
   view.rerender(<MapClient {...props} showRetailers />);
   expect(await screen.findByText(/Retailer points could not load/)).toBeInTheDocument();

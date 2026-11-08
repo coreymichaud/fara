@@ -39,6 +39,32 @@ describe('anonymous community check-in', () => {
   });
 });
 describe('private creator view', () => {
+  it('retries an initial load failure using the existing private session', async () => {
+    const user = userEvent.setup();
+    window.history.replaceState(null, '', '/plans/test/manage');
+    const fetcher = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Connection interrupted'))
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({ ...aggregateResponses([survey]), surveyEnabled: true }),
+      });
+    vi.stubGlobal('fetch', fetcher);
+    render(<CreatorResults id="test" />);
+    expect(screen.getByRole('heading', { name: 'Community responses' })).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Connection interrupted');
+    await user.click(screen.getByRole('button', { name: 'Retry loading responses' }));
+    expect(await screen.findByText('anonymous check-ins')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Retry loading responses' }),
+    ).not.toBeInTheDocument();
+    expect(fetcher).toHaveBeenNthCalledWith(2, '/api/plans/test/manage', { cache: 'no-store' });
+    expect(screen.getByRole('link', { name: 'Open the public plan' })).toHaveAttribute(
+      'href',
+      '/plans/test',
+    );
+  });
   it('exchanges a fragment token, removes it from the URL, refreshes and closes the survey', async () => {
     const user = userEvent.setup(),
       data = {

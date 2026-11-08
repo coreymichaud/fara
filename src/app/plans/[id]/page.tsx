@@ -19,16 +19,16 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
   return (
     <>
       <main id="main" className="reading-page public-plan">
-        <div className="eyebrow">{product.name.toUpperCase()} · READ-ONLY DECISION BRIEF</div>
+        <div className="eyebrow">{product.name} · Saved plan</div>
         {manifest.mode === 'illustrative' && (
           <div className="illustrative">Illustrative demo data</div>
         )}
         <h1>{scenario.title}</h1>
         <p className="public-subtitle">
-          One proposed mobile pantry event. A starting point for field validation.
+          Proposed mobile pantry event. This saved plan is read-only.
         </p>
         <div className="plan-location">
-          <span>PROPOSED CANDIDATE ZONE</span>
+          <span>Proposed location</span>
           <h2>
             {area.label} · {area.county} County
           </h2>
@@ -61,7 +61,7 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
         <section>
-          <h2>What the scenario says</h2>
+          <h2>Planning estimate</h2>
           <p>
             The planning value is {result.planningValue.toFixed(1)} abstract index units.
             Approximately {result.householdsInTracts.toLocaleString()} occupied housing units were
@@ -83,7 +83,7 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
           )}
         </section>
         <section>
-          <h2>Why this area?</h2>
+          <h2>Area indicators</h2>
           <p>
             Poverty: {area.poverty ?? 'not available'}% (ACS 2020–2024; 90% margin of error ±
             {area.povertyMoe ?? 'unknown'} percentage points). Population over 1 straight-line mile
@@ -124,7 +124,7 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
         )}
         {scenario.decisions.length > 0 && (
           <section>
-            <h2>Practitioner challenges</h2>
+            <h2>Location decisions</h2>
             <ul>
               {scenario.decisions.map((d) => (
                 <li key={d.id}>
@@ -143,7 +143,7 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
           </section>
         )}
         <section className="community-section">
-          <div className="eyebrow">LET THE COMMUNITY CHALLENGE THE PLAN</div>
+          <div className="eyebrow">Community check-in</div>
           <h2>Would this work for you?</h2>
           <p>
             This is a proposed event, not a confirmed service or registration. Your check-in does
@@ -165,7 +165,7 @@ export default async function PlanPage({ params }: { params: Promise<{ id: strin
             Census 2020, ACS 2020–2024, USDA SRAM 2025. Retailer snapshot capture date unknown.
             Source hashes and units are retained in this immutable snapshot.
           </p>
-          <Link href="/methodology">Read methodology, source attribution, and limitations ↗</Link>
+          <Link href="/methodology">Read data sources, methods, and limitations</Link>
         </section>
       </main>
       <Footer />

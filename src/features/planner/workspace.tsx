@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import * as Tabs from '@radix-ui/react-tabs';
 import * as Switch from '@radix-ui/react-switch';
@@ -8,7 +8,6 @@ import {
   ArrowRight,
   ArrowUp,
   Check,
-  ChevronRight,
   Copy,
   Flag,
   Info,
@@ -16,7 +15,6 @@ import {
   MapPin,
   Plus,
   Save,
-  SlidersHorizontal,
   Star,
   X,
 } from 'lucide-react';
@@ -42,11 +40,12 @@ export function Workspace({ data }: { data: Dataset }) {
   const [availability, setAvailability] = useState('comparable');
   const [tab, setTab] = useState('evidence');
   const [mobile, setMobile] = useState('map');
-  const [baseline, setBaseline] = useState(false);
+  const [showProposal, setShowProposal] = useState(true);
   const [retailers, setRetailers] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [saved, setSaved] = useState<{ publicUrl: string; manageUrl: string } | null>(null);
+  const detailViewport = useRef<HTMLDivElement>(null);
   const scored = useMemo(
     () => scoreAreas(data.areas, scenario.povertyWeight),
     [data.areas, scenario.povertyWeight],
@@ -80,7 +79,20 @@ export function Workspace({ data }: { data: Dataset }) {
     setSaved(null);
     setMessage('');
   };
-  const select = (id: string) => {
+  const openTab = (value: string) => {
+    setTab(value);
+    detailViewport.current!.scrollTop = 0;
+  };
+  const openSection = (mode: string) => {
+    setMobile(mode);
+    if (window.matchMedia('(max-width: 700px)').matches)
+      document.getElementById('workspace-navigation')!.scrollIntoView({ block: 'start' });
+  };
+  const showDetails = () => {
+    openTab('evidence');
+    openSection('plan');
+  };
+  const select = (id: string, revealDetails = true) => {
     const area = scored.find((a) => a.id === id);
     if (!area) return;
     update({
@@ -90,7 +102,8 @@ export function Workspace({ data }: { data: Dataset }) {
         ? { county: area.county }
         : {}),
     });
-    setTab('evidence');
+    openTab('evidence');
+    if (revealDetails) openSection('plan');
   };
   const decision = (id: string, status: Decision['status'], reason?: Decision['reason']) => {
     const decisions = [
@@ -183,54 +196,29 @@ export function Workspace({ data }: { data: Dataset }) {
     <>
       <main id="main" className="workspace">
         <div className="workspace-heading">
-          <div>
-            <div className="eyebrow">THE FOOD ACCESS PLANNER</div>
-            <h1>From public signals to a practical plan.</h1>
-            <p>Find a candidate area. Test a pop-up. Bring local knowledge.</p>
-          </div>
-          <div className="workflow" aria-label="Planning flow">
-            <span className="active">
-              <i>1</i>Explore
+          <h1>Pantry planner</h1>
+          <div className="workspace-meta">
+            <span className={data.manifest.mode === 'illustrative' ? 'illustrative' : ''}>
+              {data.manifest.mode === 'illustrative'
+                ? 'Illustrative demo data'
+                : 'Observed public indicators'}
+              <span className="meta-divider"> / </span>
+              {data.manifest.geography.length} counties · {data.areas.length} tracts
             </span>
-            <ChevronRight />
-            <span>
-              <i>2</i>Plan
-            </span>
-            <ChevronRight />
-            <span>
-              <i>3</i>Community check
-            </span>
+            <Link href="/methodology">2020–2025 source years & methods</Link>
           </div>
         </div>
-        <div
-          className={`data-ribbon ${data.manifest.mode === 'illustrative' ? 'illustrative' : ''}`}
-        >
-          <span>
-            <span className="status-dot" />
-            {data.manifest.mode === 'illustrative'
-              ? 'Illustrative demo data'
-              : 'Observed public indicators'}
-          </span>
-          <span>
-            {data.manifest.geography.length} counties · {data.areas.length} census tracts
-          </span>
-          <Link href="/methodology">
-            2020–2025 source vintages <Info size={13} />
-          </Link>
-          <code>DATA {data.manifest.datasetVersion}</code>
-        </div>
-        <div className="mobile-tabs" aria-label="Workspace sections">
+        <div id="workspace-navigation" className="mobile-tabs" aria-label="Workspace sections">
           {['areas', 'map', 'plan'].map((mode) => (
-            <button key={mode} aria-pressed={mobile === mode} onClick={() => setMobile(mode)}>
-              {mode === 'areas' ? 'Explore areas' : mode === 'map' ? 'Map' : 'Your plan'}
+            <button key={mode} aria-pressed={mobile === mode} onClick={() => openSection(mode)}>
+              {mode === 'areas' ? 'Areas' : mode === 'map' ? 'Map' : 'Plan'}
             </button>
           ))}
         </div>
         <div className="workspace-grid" data-mobile={mobile}>
           <aside className="analysis-rail" aria-label="Area explorer">
             <div className="rail-heading">
-              <h2>Where to look</h2>
-              <SlidersHorizontal size={18} />
+              <h2>Suggested areas</h2>
             </div>
             <label className="field">
               Study area
@@ -278,10 +266,10 @@ export function Workspace({ data }: { data: Dataset }) {
                 <span>Retail distance</span>
                 <strong>{100 - scenario.povertyWeight}%</strong>
               </div>
-              <Link href="/methodology">How the index works ↗</Link>
+              <Link href="/methodology">How the index works</Link>
             </details>
             <div className="section-heading">
-              <h3>Candidate zones</h3>
+              <h3>Candidates</h3>
               <span>{ranked.length} eligible</span>
             </div>
             <label className="sr-only" htmlFor="availability">
@@ -293,12 +281,12 @@ export function Workspace({ data }: { data: Dataset }) {
               value={availability}
               onChange={(e) => setAvailability(e.target.value)}
             >
-              <option value="comparable">Recommended · comparable data</option>
-              <option value="missing">Insufficient comparable data</option>
+              <option value="comparable">Comparable indicators</option>
+              <option value="missing">Missing indicators</option>
             </select>
             <p className="rail-note">
-              Ranked for this event’s radius and capacity. These are areas to investigate, not
-              approved venues.
+              Ordered by planning value for your radius and capacity. Candidate areas are not
+              confirmed venues.
             </p>
             <ol className="candidate-list">
               {list.map(({ area, result: potential }, i) => (
@@ -313,16 +301,13 @@ export function Workspace({ data }: { data: Dataset }) {
                       <strong>{area.label.replace('Census ', '')}</strong>
                       <small>{area.county} County</small>
                     </span>
-                    <span className="candidate-priority">
-                      {area.priority === null ? '—' : area.priority.toFixed(0)}
-                      <small>/ 100</small>
+                    <span className="candidate-value">
+                      {area.priority === null ? '—' : potential.planningValue.toFixed(0)}
+                      <small>plan value</small>
                     </span>
                   </button>
                   <div className="candidate-meta">
-                    <span>
-                      {potential.areaCount} nearby tracts · {potential.planningValue.toFixed(0)}{' '}
-                      planning value
-                    </span>
+                    <span>Tract points in radius: {potential.areaCount}</span>
                     <button
                       className="icon-button"
                       aria-label={`Shortlist ${area.label}`}
@@ -411,39 +396,31 @@ export function Workspace({ data }: { data: Dataset }) {
           <section className="map-workspace" aria-label="Planning map">
             <div className="map-toolbar">
               <span>
-                <MapPin size={14} /> Central Florida
+                <MapPin size={16} /> Study map
               </span>
-              <div className="segmented" aria-label="Scenario overlay">
-                <button aria-pressed={baseline} onClick={() => setBaseline(true)}>
-                  Current network
-                </button>
-                <button aria-pressed={!baseline} onClick={() => setBaseline(false)}>
-                  Proposed site
-                </button>
-              </div>
+              <label className="overlay-toggle">
+                <input
+                  type="checkbox"
+                  checked={showProposal}
+                  onChange={(e) => setShowProposal(e.target.checked)}
+                />
+                Show event overlay
+              </label>
             </div>
-            <MapView
-              areas={scored}
-              scenario={scenario}
-              included={result.areaIds}
-              baseline={baseline}
-              showRetailers={retailers}
-              onSelect={select}
-              onMove={(coordinates) => update({ coordinates })}
-            />
-            <div className="map-overline">
-              <span className="map-chip">
-                {baseline ? 'Current pantry network unknown' : 'ONE PROPOSED POP-UP'}
-              </span>
-              <p>
-                {baseline
-                  ? 'No measured baseline or incremental uplift is available.'
-                  : `${scenario.radius} mile straight-line radius · drag the marker to test a site`}
-              </p>
+            <div className="map-stage">
+              <MapView
+                areas={scored}
+                scenario={scenario}
+                included={result.areaIds}
+                showProposal={showProposal}
+                showRetailers={retailers}
+                onSelect={(id) => select(id, false)}
+                onMove={(coordinates) => update({ coordinates })}
+              />
             </div>
             <div className="map-legend">
               <div>
-                <strong>Relative planning priority</strong>
+                <strong>Planning priority</strong>
                 <span>
                   Lower <i />
                   <i />
@@ -464,37 +441,52 @@ export function Workspace({ data }: { data: Dataset }) {
                 SNAP retailer points
               </label>
             </div>
-            <div className="map-metric">
+            <div className="selected-area-summary" aria-label="Selected map area">
               <div>
-                <span className="eyebrow">POTENTIAL REACH OF THIS PROPOSED SITE</span>
-                <div>
-                  <strong>{baseline ? '—' : result.areaCount}</strong>
-                  <span>
-                    tract representative points
-                    <br />
-                    within the radius
-                  </span>
-                </div>
+                <span>Selected area</span>
+                <strong>
+                  {selected.label.replace('Census ', '')} · {selected.county} County
+                </strong>
               </div>
-              <span className="metric-rule" />
-              <p>
-                <strong>{scenario.capacity.toLocaleString()} household slots</strong>
-                <br />
-                Operator-entered event capacity.
-                <br />
-                Attendance and current service coverage are unknown.
-              </p>
+              <Button variant="secondary" className="mobile-area-details" onClick={showDetails}>
+                View area details
+              </Button>
+            </div>
+            <dl className="map-summary" aria-label="Event assumptions">
+              <div>
+                <dt>Straight-line radius</dt>
+                <dd>
+                  {scenario.radius.toFixed(1)} <span>mi</span>
+                </dd>
+              </div>
+              <div>
+                <dt>Household slots</dt>
+                <dd>{scenario.capacity.toLocaleString()}</dd>
+              </div>
+              <div>
+                <dt>Tract points in radius</dt>
+                <dd>{result.areaCount}</dd>
+              </div>
+            </dl>
+            <div className="map-context">
+              <p>Existing pantry locations are unavailable.</p>
+              <p>Capacity is entered by the planner, not predicted attendance.</p>
             </div>
           </section>
           <aside className="plan-panel" aria-label="Evidence and plan">
-            <Tabs.Root className="detail-tabs-root" value={tab} onValueChange={setTab}>
+            <Tabs.Root
+              ref={detailViewport}
+              className="detail-tabs-root"
+              value={tab}
+              onValueChange={openTab}
+            >
               <Tabs.List className="panel-tabs" aria-label="Plan detail tabs">
-                <Tabs.Trigger value="evidence">Evidence</Tabs.Trigger>
-                <Tabs.Trigger value="plan">Your event</Tabs.Trigger>
-                <Tabs.Trigger value="compare">Compare</Tabs.Trigger>
+                <Tabs.Trigger value="evidence">Area details</Tabs.Trigger>
+                <Tabs.Trigger value="plan">Event settings</Tabs.Trigger>
+                <Tabs.Trigger value="compare">Compare locations</Tabs.Trigger>
               </Tabs.List>
               <Tabs.Content value="evidence" className="panel-content">
-                <div className="eyebrow">WHY THIS AREA?</div>
+                <div className="eyebrow">Selected census tract</div>
                 <div className="area-heading">
                   <div>
                     <h2>{selected.label.replace('Census ', '')}</h2>
@@ -546,7 +538,7 @@ export function Workspace({ data }: { data: Dataset }) {
                   </p>
                 </div>
                 <div className="section-heading">
-                  <h3>Bring your local knowledge</h3>
+                  <h3>Local review</h3>
                   <Flag size={16} />
                 </div>
                 <p className="fine-print">
@@ -587,8 +579,8 @@ export function Workspace({ data }: { data: Dataset }) {
                 <Button
                   className="full-width"
                   onClick={() => {
-                    setTab('plan');
-                    setMobile('plan');
+                    openTab('plan');
+                    openSection('plan');
                   }}
                   disabled={selected.priority === null}
                 >
@@ -596,8 +588,8 @@ export function Workspace({ data }: { data: Dataset }) {
                 </Button>
               </Tabs.Content>
               <Tabs.Content value="plan" className="panel-content">
-                <div className="eyebrow">A SCENARIO TO TEST</div>
-                <h2>Make it a practical event.</h2>
+                <div className="eyebrow">Proposed event</div>
+                <h2>Event settings</h2>
                 <p className="panel-intro">
                   {selected.label} · {selected.county} County
                 </p>
@@ -757,14 +749,14 @@ export function Workspace({ data }: { data: Dataset }) {
                 <Button
                   variant="secondary"
                   className="full-width"
-                  onClick={() => setTab('compare')}
+                  onClick={() => openTab('compare')}
                 >
-                  Compare the potential <ArrowRight size={16} />
+                  Compare locations <ArrowRight size={16} />
                 </Button>
               </Tabs.Content>
               <Tabs.Content value="compare" className="panel-content">
-                <div className="eyebrow">TEST THE ASSUMPTIONS</div>
-                <h2>Potential, with context.</h2>
+                <div className="eyebrow">Location comparison</div>
+                <h2>Compare locations</h2>
                 <p className="panel-intro">
                   Current pantry service coverage is unknown. These are proposed-site scenarios, not
                   before-and-after results.
@@ -951,15 +943,6 @@ export function Workspace({ data }: { data: Dataset }) {
               </ul>
             </details>
           </aside>
-        </div>
-        <div className="workspace-caption">
-          <span>
-            <MapPin size={13} /> Candidate zones are tract representative points. No travel times or
-            pantry network are modeled.
-          </span>
-          <Link href="/methodology">
-            Data & limitations <ArrowUp size={12} />
-          </Link>
         </div>
       </main>
       <Footer />

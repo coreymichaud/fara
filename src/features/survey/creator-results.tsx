@@ -68,7 +68,7 @@ export function CreatorResults({ id }: { id: string }) {
   return (
     <main id="main" className="reading-page creator-page">
       <div className="eyebrow">PRIVATE CREATOR VIEW</div>
-      <h1>A community check, not a verdict.</h1>
+      <h1>Community responses</h1>
       <p>
         Only the private management link or this browser’s creator session grants access. Public
         plan readers cannot see these results.
@@ -80,6 +80,11 @@ export function CreatorResults({ id }: { id: string }) {
             If the token and browser session are lost, access cannot be recovered. Create a new
             plan; the public link does not restore management privileges.
           </p>
+          {!results && (
+            <Button variant="secondary" onClick={() => void refresh()} disabled={busy}>
+              Retry loading responses
+            </Button>
+          )}
         </div>
       )}
       {results && (
@@ -132,7 +137,7 @@ export function CreatorResults({ id }: { id: string }) {
         </>
       )}
       {!results && !error && <p role="status">Checking private access…</p>}
-      <Link href={`/plans/${id}`}>Open the public plan ↗</Link>
+      <Link href={`/plans/${id}`}>Open the public plan</Link>
     </main>
   );
 }

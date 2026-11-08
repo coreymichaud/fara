@@ -46,4 +46,6 @@ it('renders percent axes and formats an accessible keyboard tooltip', async () =
   fireEvent.focus(chart);
   fireEvent.keyDown(chart, { key: 'ArrowRight' });
   await waitFor(() => expect(screen.getByText('10.0%')).toBeInTheDocument());
+  expect(screen.getByText('10.0%').closest('li')).toHaveStyle({ color: '#1e343f' });
+  expect(screen.getByText('20.0%').closest('li')).toHaveStyle({ color: '#1e343f' });
 });

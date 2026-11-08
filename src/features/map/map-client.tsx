@@ -150,12 +150,14 @@ export default function MapClient(props: MapProps) {
           type: 'fill',
           source: 'catchment',
           paint: { 'fill-color': '#f79122', 'fill-opacity': 0.13 },
+          layout: { visibility: 'none' },
         });
         instance.addLayer({
           id: 'catchment-line',
           type: 'line',
           source: 'catchment',
           paint: { 'line-color': '#c16a08', 'line-width': 2, 'line-dasharray': [3, 2] },
+          layout: { visibility: 'none' },
         });
         instance.addLayer({
           id: 'retailers',
@@ -190,6 +192,7 @@ export default function MapClient(props: MapProps) {
         });
         const el = document.createElement('div');
         el.className = 'site-marker';
+        el.style.display = current.current.showProposal ? '' : 'none';
         el.setAttribute('role', 'img');
         el.setAttribute('aria-label', 'Proposed site; drag to move or use coordinate fields');
         el.textContent = '●';
@@ -229,17 +232,18 @@ export default function MapClient(props: MapProps) {
         { source: 'tracts', id: a.id },
         {
           priority: a.priority,
-          included: props.included.includes(a.id) && !props.baseline,
+          included: props.included.includes(a.id) && props.showProposal,
           inScope: props.scenario.county === 'all' || a.county === props.scenario.county,
         },
       );
     (instance.getSource('catchment') as GeoJSONSource).setData(
       circlePolygon(props.scenario.coordinates, props.scenario.radius),
     );
-    for (const layer of ['catchment-fill', 'catchment-line'])
-      instance.setLayoutProperty(layer, 'visibility', props.baseline ? 'none' : 'visible');
+    for (const layer of ['catchment-fill', 'catchment-line', 'included'])
+      instance.setLayoutProperty(layer, 'visibility', props.showProposal ? 'visible' : 'none');
     instance.setLayoutProperty('retailers', 'visibility', props.showRetailers ? 'visible' : 'none');
     marker.current?.setLngLat(props.scenario.coordinates);
+    marker.current!.getElement().style.display = props.showProposal ? '' : 'none';
   }, [props, ready]);
   const visible = new Map(props.areas.map((a) => [a.id, a]));
   const path = (ring: number[][]) =>
@@ -275,8 +279,8 @@ export default function MapClient(props: MapProps) {
                 opacity={
                   props.scenario.county === 'all' || a.county === props.scenario.county ? 1 : 0.2
                 }
-                stroke={!props.baseline && props.included.includes(a.id) ? '#c16a08' : '#fff'}
-                strokeWidth={!props.baseline && props.included.includes(a.id) ? 2 : 0.6}
+                stroke={props.showProposal && props.included.includes(a.id) ? '#c16a08' : '#fff'}
+                strokeWidth={props.showProposal && props.included.includes(a.id) ? 2 : 0.6}
                 onClick={() => props.onSelect(a.id)}
               >
                 <title>
@@ -285,7 +289,7 @@ export default function MapClient(props: MapProps) {
               </path>
             );
           })}
-          {!props.baseline && (
+          {props.showProposal && (
             <>
               <ellipse
                 cx={(props.scenario.coordinates[0] + 82.05) * 560}
@@ -330,10 +334,7 @@ export default function MapClient(props: MapProps) {
           {!fallback && <button onClick={() => setFallback(true)}>Use boundary map</button>}
         </div>
       )}
-      <div className="map-source">
-        Census 2020 boundaries · USDA ERS ·{' '}
-        {fallback ? 'Local boundary map' : '© OpenFreeMap · © OpenStreetMap contributors'}
-      </div>
+      {fallback && <div className="map-source">Census 2020 boundaries · USDA ERS</div>}
     </div>
   );
 }

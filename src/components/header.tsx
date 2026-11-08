@@ -1,22 +1,34 @@
+'use client';
 import Link from 'next/link';
-import { ArrowUpRight } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { product } from '@/config/product';
+
+const navigation = [
+  { href: '/', label: 'Planner' },
+  { href: '/methodology', label: 'Methodology' },
+  { href: '/about', label: 'About' },
+];
+
 export function Header() {
+  const pathname = usePathname();
   return (
     <header className="site-header">
       <Link href="/" className="wordmark" aria-label={`${product.name} home`}>
         {product.name}
-        <span className="wordmark-dot" />
       </Link>
       <span className="header-descriptor">{product.fullName}</span>
       <nav aria-label="Main navigation">
-        <Link href="/">Planner</Link>
-        <Link href="/methodology">Methodology</Link>
-        <Link href="/about">
-          About <ArrowUpRight size={14} />
-        </Link>
+        {navigation.map(({ href, label }) => (
+          <Link
+            key={href}
+            href={href}
+            aria-current={pathname === href ? 'page' : undefined}
+            data-active={pathname === href || (href === '/' && pathname.startsWith('/plans/'))}
+          >
+            {label}
+          </Link>
+        ))}
       </nav>
-      <span className="prototype-tag">Central Florida · Prototype</span>
     </header>
   );
 }

@@ -4,34 +4,34 @@
 
 ## Checks
 
-| Check                                               | Result                                                                                                                                            |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Specification, source inventory, and brand review   | Completed; rendered brand pages inspected                                                                                                         |
-| Local uv pipeline / processed-asset validation      | Pass: observed mode, 490 tracts, 488 eligible, 1,694 retailer points; version `5d7db3d37ab5`                                                      |
-| Six source EDA notebooks                            | Executed successfully in fresh uv kernels; aggregate-only outputs retained                                                                        |
-| ESLint / Prettier / strict TypeScript               | Pass                                                                                                                                              |
-| Python Ruff lint / Ruff format / strict mypy        | Pass                                                                                                                                              |
-| Vitest + React Testing Library + Firestore Emulator | **79 tests passed** across 12 test files                                                                                                          |
-| V8 statement coverage                               | **100%: 738 / 738**                                                                                                                               |
-| V8 branch coverage                                  | **100%: 507 / 507**                                                                                                                               |
-| V8 function coverage                                | **100%: 255 / 255**                                                                                                                               |
-| V8 line coverage                                    | **100%: 659 / 659**                                                                                                                               |
-| Pytest + Hypothesis + pytest-cov                    | **19 tests passed**                                                                                                                               |
-| Python statement / line coverage                    | **100%: 214 / 214**, zero excluded/missing lines                                                                                                  |
-| Python branch coverage                              | **100%: 72 / 72**, zero partial/missing branches                                                                                                  |
-| Next production build                               | Pass, standalone output with supported webpack builder                                                                                            |
-| Full browser acceptance suite                       | **3 passed**, including the share/survey/creator journey in separate Chromium contexts against the Firestore Emulator                             |
-| Viewports                                           | 390×844, 820×1180, 1440×1080, 1920×1080; no horizontal page overflow in tested states                                                             |
-| Automated accessibility                             | Zero axe WCAG 2A/AA/2.1AA violations in the tested desktop workspace; keyboard chart tooltip and labeled forms also exercised                     |
-| Basemap failure                                     | Real local Census polygon fallback, selection and planning tested; retailer overlay also tested at its integration boundary                       |
-| Local production Docker build                       | Pass, `linux/amd64`, Node 24, non-root standalone image                                                                                           |
-| Final image/container smoke                         | Pass: homepage, methodology/about, health, manifest, area JSON and map GeoJSON; forbidden raw/intermediate/notebook/reference/secret paths absent |
-| Production persistence failure                      | Pass: writes return 503 and a visible error when Firestore is unconfigured; no filesystem fallback                                                |
-| Git exclusions                                      | Verified raw/generated datasets and `.env.local` ignored; no tracked raw/processed web data                                                       |
-| Shell scripts                                       | `bash -n` passes; help paths and local image smoke workflow exercised                                                                             |
-| Single check command                                | `npm run check` completed successfully with emulator variables and `E2E_STORAGE_ADAPTER=firestore`                                                |
+| Check                                               | Result                                                                                                                                                                       |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Specification, source inventory, and brand review   | Completed; rendered brand pages inspected                                                                                                                                    |
+| Local uv pipeline / processed-asset validation      | Pass: observed mode, 490 tracts, 488 eligible, 1,694 retailer points; version `5d7db3d37ab5`                                                                                 |
+| Six source EDA notebooks                            | Executed successfully in fresh uv kernels; aggregate-only outputs retained                                                                                                   |
+| ESLint / Prettier / strict TypeScript               | Pass                                                                                                                                                                         |
+| Python Ruff lint / Ruff format / strict mypy        | Pass                                                                                                                                                                         |
+| Vitest + React Testing Library + Firestore Emulator | **90 tests passed** across 12 test files                                                                                                                                     |
+| V8 statement coverage                               | **100%: 758 / 758**                                                                                                                                                          |
+| V8 branch coverage                                  | **100%: 517 / 517**                                                                                                                                                          |
+| V8 function coverage                                | **100%: 260 / 260**                                                                                                                                                          |
+| V8 line coverage                                    | **100%: 678 / 678**                                                                                                                                                          |
+| Pytest + Hypothesis + pytest-cov                    | **19 tests passed**                                                                                                                                                          |
+| Python statement / line coverage                    | **100%: 214 / 214**, zero excluded/missing lines                                                                                                                             |
+| Python branch coverage                              | **100%: 72 / 72**, zero partial/missing branches                                                                                                                             |
+| Next production build                               | Pass, standalone output with supported webpack builder                                                                                                                       |
+| Full browser acceptance suite                       | **3 passed**, including the share/survey/creator journey in separate Chromium contexts against the Firestore Emulator                                                        |
+| Viewports                                           | 390×844, 820×1180, 1440×1080, 1920×1080; no horizontal page overflow in tested states                                                                                        |
+| Automated accessibility                             | Zero axe WCAG 2A/AA/2.1AA violations in desktop/phone workspace, phone area details, public phone survey, and creator results; keyboard controls and chart tooltip exercised |
+| Basemap failure                                     | Real local Census polygon fallback, selection and planning tested; retailer overlay also tested at its integration boundary                                                  |
+| Local production Docker build                       | Pass, `linux/amd64`, Node 24, non-root standalone image                                                                                                                      |
+| Final image/container smoke                         | Pass: homepage, methodology/about, health, manifest, area JSON and map GeoJSON; forbidden raw/intermediate/notebook/reference/secret paths absent                            |
+| Production persistence failure                      | Pass: writes return 503 and a visible error when Firestore is unconfigured; no filesystem fallback                                                                           |
+| Git exclusions                                      | Verified raw/generated datasets and `.env.local` ignored; no tracked raw/processed web data                                                                                  |
+| Shell scripts                                       | `bash -n` passes; help paths and local image smoke workflow exercised                                                                                                        |
+| Single check command                                | `npm run check` completed successfully with emulator variables and `E2E_STORAGE_ADAPTER=firestore`                                                                           |
 
-A source-only checkout without raw datasets, generated web data, local environment files, or supplied reference inputs also passed ESLint, Prettier, Next route-type generation, strict TypeScript, and all 79 application tests at 100% coverage using an isolated Firestore Emulator. This verifies the data-independent CI path; production builds still require the locally processed web assets.
+A source-only checkout without raw datasets, generated web data, local environment files, or supplied reference inputs also passed ESLint, Prettier, Next route-type generation, strict TypeScript, and all 90 application tests at 100% coverage using an isolated Firestore Emulator. This verifies the data-independent CI path; production builds still require the locally processed web assets.
 
 The JavaScript coverage scope is all authored `src/**/*.{ts,tsx}` and `scripts/*.mjs`. Only the five route files consisting solely of framework exports/runtime declarations are excluded; their actual handler implementations are covered. No application logic or uncovered branches are marked coverage-exempt, and thresholds remain 100. V8 reports the empty/type declaration storage module without executable statements as an empty file. Framework configuration, generated vendor modules, Next build output and external dependencies are outside application-source coverage.
 
@@ -49,7 +49,7 @@ E2E_STORAGE_ADAPTER=firestore npm run check
 
 Verified local image tag: `food-access:local`.
 
-Verified local image identity: `sha256:8c000f6052ac6936c066a5e219e254531b8de8396c2e4be39417bd0e9ee8cab5` (`linux/amd64`). Artifact Registry push and Cloud Run deployment remain pending.
+Verified local image identity: `sha256:926d09d8f1acbb093bd355f89d3bc42f8f9ec6b2a082a3e3c87e0a36b4500d97` (`linux/amd64`). Artifact Registry push and Cloud Run deployment remain pending.
 
 ```sh
 docker build --platform linux/amd64 -t food-access:local .
@@ -68,9 +68,9 @@ The independent Docker allowlist excludes the original source files from every b
 
 ## Browser/performance evidence and limits
 
-Application screenshots are in [screenshots/](screenshots/). A separate browser inspection of the local production container recorded **no uncaught page errors** and confirmed the explicit unconfigured-persistence error. One unthrottled desktop lab navigation observed LCP 952 ms and CLS 0.00391. See the timestamp/environment and full measurement in [performance.json](performance.json). This is not Lighthouse, a mobile-network test, field p75 Core Web Vitals, or an INP claim. That performance sample predates the FARA naming update; the screenshots and browser acceptance checks were refreshed for the new name.
+Application screenshots are in [screenshots/](screenshots/). A separate browser inspection of the local production container recorded **no uncaught page errors** and confirmed the explicit unconfigured-persistence error. One unthrottled desktop lab navigation observed LCP 952 ms and CLS 0.00391. See the timestamp/environment and full measurement in [performance.json](performance.json). This is not Lighthouse, a mobile-network test, field p75 Core Web Vitals, or an INP claim. That historical performance sample predates the atlas redesign. The current screenshots and acceptance tests cover the redesign; no new LCP/CLS measurement is claimed.
 
-The evidence chart keeps an explicit height when its mobile panel is hidden. Unit and browser checks cover the hidden panel without chart-size warnings and the visible chart’s axes and keyboard tooltip. Jupyter emits a local-kernel TCP warning during execution; kernels were local and no notebook server was published.
+The evidence chart keeps an explicit height when its mobile panel is hidden. Unit and browser checks cover the hidden panel without chart-size warnings, readable axes and tooltip text, and keyboard interaction. Jupyter emits a local-kernel TCP warning during execution; kernels were local and no notebook server was published.
 
 The dependency audit reported **zero known production dependency vulnerabilities**. The full development-tool tree still reports **20 moderate findings**, primarily tooling/transitive dependencies; the proposed forced remediation would downgrade Firebase tooling and was not applied. OS-image CVE scanning, broad browser-engine testing, assistive-technology review and live operational monitoring were not performed. Search indexing is disabled for this prototype. Canonical URLs and business structured data are omitted until a deployment domain and appropriate content are available.
 

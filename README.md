@@ -96,7 +96,9 @@ npm run data:validate
 npm run dev
 ```
 
-Open **http://localhost:3000**. Expected output includes `Validated 490 observed tracts` during validation and Next’s `Ready` message at startup. The local map uses official polygons and an external no-key OpenFreeMap basemap. If tiles fail, the labeled local boundary fallback remains available. Use the area list and coordinate fields for keyboard access. On phones, switch between **Explore areas / Map / Your plan**.
+Open **http://localhost:3000**. Expected output includes `Validated 490 observed tracts` during validation and Next’s `Ready` message at startup. The local map uses official polygons and an external no-key OpenFreeMap basemap. If tiles fail, the labeled local boundary fallback remains available. Use the area list and coordinate fields for keyboard access.
+
+In **Pantry planner**, choose a row under **Suggested areas**, review **Area details**, enter the proposal in **Event settings**, and use **Compare locations** to consider alternatives. **Show event overlay** turns the proposed marker and radius on or off; it does not show existing pantry coverage, which is unknown. The legend, selected-area summary, and event assumptions sit below the map. On phones, switch between **Areas / Map / Plan**, or use **View area details** beneath the selected map area.
 
 `npm run dev` prepares the licensed same-origin MapLibre worker automatically. The pipeline reports counties, row counts, version, and missing values. Missing or malformed inputs stop processing with an error. Synthetic fixtures are used only in tests; the application requires the processed source data.
 

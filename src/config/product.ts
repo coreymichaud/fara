@@ -6,7 +6,7 @@ export const product = {
   fullName,
   title: `${name} · ${fullName}`,
   description:
-    'Explore Central Florida food-access indicators, test a mobile pantry scenario, and ask the community.',
+    'Plan mobile pantry events in Central Florida. Compare locations, review public food-access data, and collect community feedback.',
   shareCopy: `Review this ${name} mobile pantry plan`,
-  footer: 'An independent hackathon prototype using Beacon-supplied public data.',
+  sourceCredit: 'U.S. Census · USDA ERS',
 };

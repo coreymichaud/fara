@@ -20,8 +20,8 @@ export function EvidenceChart({ area, areas }: { area: Area; areas: Area[] }) {
         Selected tract <span className="chart-key county-key" />
         County tract mean
       </figcaption>
-      <div style={{ width: '100%', height: 125 }}>
-        <ResponsiveContainer width="100%" height={125} minWidth={0}>
+      <div style={{ width: '100%', height: 176 }}>
+        <ResponsiveContainer width="100%" height={176} minWidth={0}>
           <BarChart
             data={data}
             layout="vertical"
@@ -32,22 +32,24 @@ export function EvidenceChart({ area, areas }: { area: Area; areas: Area[] }) {
             <XAxis
               type="number"
               domain={[0, 100]}
+              ticks={[0, 50, 100]}
               tickFormatter={(n) => `${n}%`}
-              tick={{ fontSize: 11, fill: '#586770' }}
+              tick={{ fontSize: 14, fill: '#53636c' }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
               type="category"
               dataKey="name"
-              width={92}
-              tick={{ fontSize: 12, fill: '#3c4d57' }}
+              width={110}
+              tick={{ fontSize: 14, fill: '#3c4b54' }}
               axisLine={false}
               tickLine={false}
             />
             <Tooltip
               formatter={(value) => `${Number(value).toFixed(1)}%`}
               cursor={{ fill: '#f1f4f5' }}
+              itemStyle={{ color: '#1e343f' }}
             />
             <Bar
               dataKey="tract"
@@ -59,7 +61,7 @@ export function EvidenceChart({ area, areas }: { area: Area; areas: Area[] }) {
             <Bar
               dataKey="county"
               name="Unweighted county tract mean (%)"
-              fill="#c3d1d9"
+              fill="#6b8fa8"
               radius={[0, 2, 2, 0]}
               isAnimationActive={false}
             />

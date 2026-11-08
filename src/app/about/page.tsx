@@ -5,44 +5,47 @@ export default function About() {
   return (
     <>
       <main id="main" className="reading-page">
-        <div className="eyebrow">ABOUT THE PROTOTYPE</div>
-        <h1>
-          Plan a mobile pantry
-          <br />
-          with public data.
-        </h1>
+        <div className="eyebrow">{product.fullName}</div>
+        <h1>About {product.name}</h1>
         <p className="page-lead">
-          {product.name} ({product.fullName}) helps Central Florida food banks, pantries, and
-          community program managers turn public food-access signals into a proposal they can test.
+          {product.name} helps food banks and pantry operators plan mobile distribution events in
+          Lake, Orange, Osceola, and Seminole counties.
         </p>
         <section>
-          <h2>From public indicators to an event proposal</h2>
+          <h2>Planning an event</h2>
           <p>
-            A map can point out a pattern. It cannot confirm a venue, know about an unlisted pantry,
-            or tell whether Saturday morning works for nearby residents. This prototype connects
-            public evidence, a single mobile-pantry scenario, practitioner challenges, a persistent
-            decision brief, and an anonymous community check-in.
+            Select an area, review its poverty and retail-distance indicators, and set a proposed
+            location, radius, schedule, and capacity. Compare alternatives and record venue concerns
+            before saving a plan. The public plan can include a short anonymous check-in about the
+            location and time.
           </p>
         </section>
         <section>
-          <h2>Built for the Beacon challenge</h2>
+          <h2>What needs a local check</h2>
           <p>
-            An independent Orlando DevFest 2026 Data for Good prototype for Challenge 2: Food Access
-            & Nutrition Gaps. It uses locally supplied public datasets and Beacon’s April 2026
-            design guidelines. It is built outside Beacon and is not an official DataKind product or
-            a Beacon integration.
+            Public indicators cannot confirm venue permission, safety, accessibility, current pantry
+            services, or demand. The map uses straight-line distances and tract representative
+            points. It does not predict attendance, travel time, or people served. A saved proposal
+            is not a confirmed event or a promise of food availability.
           </p>
         </section>
         <section>
-          <h2>What planners need to verify</h2>
+          <h2>Data and project background</h2>
           <p>
-            The application uses deterministic calculations, not generative AI or machine learning.
-            AI assistance was used to create the software. Operators must verify current data, venue
-            permission, safety, accessibility, community demand, and service duplication before any
-            real event. No service or food availability is promised here.
+            {product.name} uses public U.S. Census and USDA datasets supplied through Beacon, with
+            Beacon’s April 2026 design guidelines. It is independently built and is not an official
+            DataKind product or a Beacon integration. Source years, definitions, and model
+            limitations are described in <Link href="/methodology">Data & methods</Link>.
           </p>
         </section>
-        <Link href="/">Open the planner →</Link>
+        <section>
+          <h2>Calculations and development</h2>
+          <p>
+            Scoring and proximity calculations are deterministic. The application does not use
+            generative AI or machine learning. AI assistance was used during software development.
+          </p>
+        </section>
+        <Link href="/">Open the planner</Link>
       </main>
       <Footer />
     </>

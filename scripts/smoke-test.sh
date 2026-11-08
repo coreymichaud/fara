@@ -19,6 +19,6 @@ const areas=JSON.parse(fs.readFileSync(`${dir}/_data_areas.json`));
 const tracts=JSON.parse(fs.readFileSync(`${dir}/_data_tracts.geojson`));
 const health=JSON.parse(fs.readFileSync(`${dir}/_api_health`));
 if(manifest.mode!=='observed'||manifest.schemaVersion!=='1.0'||areas.length!==manifest.areaCount||tracts.features.length!==areas.length||health.datasetVersion!==manifest.datasetVersion)throw new Error('Data endpoint mismatch');
-if(!fs.readFileSync(`${dir}/_`,'utf8').includes('From public signals'))throw new Error('Homepage not rendered');
+if(!fs.readFileSync(`${dir}/_`,'utf8').includes('Pantry planner'))throw new Error('Homepage not rendered');
 console.log(`Smoke passed: homepage, methodology, about, health, manifest, ${areas.length} areas and map geometry`);
 JS
