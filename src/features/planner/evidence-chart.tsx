@@ -21,7 +21,7 @@ export function EvidenceChart({ area, areas }: { area: Area; areas: Area[] }) {
         County tract mean
       </figcaption>
       <div style={{ width: '100%', height: 125 }}>
-        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+        <ResponsiveContainer width="100%" height={125} minWidth={0}>
           <BarChart
             data={data}
             layout="vertical"

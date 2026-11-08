@@ -2,11 +2,11 @@
 
 Introduce the project as **FARA (Food Access Resource Allocation)**.
 
-Record the real app at 1440px width, with a separate 390px phone shot. Hide bookmarks, terminal secrets and the private management URL. Use one freshly created plan and one genuine demo survey submission. Do not add fabricated residents or testimonials. Recording/editing/upload remain teammate tasks.
+Record the app at 1440px width, with a separate 390px phone shot. Hide bookmarks, terminal secrets, and the private management URL. Use a fresh plan and label the survey submission as a demonstration response. This shot list covers recording, editing, and upload still to be done.
 
 | Time   | Shot                                           | Narration / caption                                                                             |
 | ------ | ---------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| 0–8s   | Actual workspace, real map visible             | “Public food-access indicators should lead to a decision we can test.”                          |
+| 0–8s   | Workspace with map visible                     | “Public food-access indicators should lead to a decision we can test.”                          |
 | 8–20s  | Select tract, evidence and weight slider       | “Inspect poverty, retail distance, source years and uncertainty. The index is relative.”        |
 | 20–34s | Event tab; change radius/capacity              | “Test one proposed pop-up with a straight-line catchment and explicit household-slot capacity.” |
 | 34–45s | Compare alternative and sensitivity            | “Compare under the same assumptions. Current pantry coverage is unknown.”                       |
@@ -15,4 +15,4 @@ Record the real app at 1440px width, with a separate 390px phone shot. Hide book
 | 67–76s | Phone survey; submit four choices              | “Ask whether the location and time work, without collecting personal details.”                  |
 | 76–80s | Creator view n and suppression, token hidden   | “A testable plan, not a promised outcome.”                                                      |
 
-End frame: independent prototype, data source credits, and only an actually verified public URL. If cloud deployment is pending, label the recording “Local prototype demonstration” and omit the URL. Do not upload footage containing a private creator token. See `rubric_alignment.md` for accurate Google/AI wording.
+End frame: independent prototype, data source credits, and the smoke-tested public URL. While cloud deployment is pending, label the recording “Local prototype demonstration” and omit the URL. Check that no private creator token appears in the footage. See `rubric_alignment.md` for the scope of the Google tooling and development assistance.

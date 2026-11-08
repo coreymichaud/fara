@@ -7,15 +7,16 @@ export default function About() {
       <main id="main" className="reading-page">
         <div className="eyebrow">ABOUT THE PROTOTYPE</div>
         <h1>
-          Make the next decision
-          <br />a better question.
+          Plan a mobile pantry
+          <br />
+          with public data.
         </h1>
         <p className="page-lead">
           {product.name} ({product.fullName}) helps Central Florida food banks, pantries, and
           community program managers turn public food-access signals into a proposal they can test.
         </p>
         <section>
-          <h2>Close the decision loop</h2>
+          <h2>From public indicators to an event proposal</h2>
           <p>
             A map can point out a pattern. It cannot confirm a venue, know about an unlisted pantry,
             or tell whether Saturday morning works for nearby residents. This prototype connects
@@ -33,7 +34,7 @@ export default function About() {
           </p>
         </section>
         <section>
-          <h2>Human judgment stays in the loop</h2>
+          <h2>What planners need to verify</h2>
           <p>
             The application uses deterministic calculations, not generative AI or machine learning.
             AI assistance was used to create the software. Operators must verify current data, venue

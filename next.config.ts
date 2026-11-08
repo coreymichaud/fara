@@ -2,6 +2,7 @@ import type { NextConfig } from 'next';
 const config: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
+  devIndicators: false,
   serverExternalPackages: ['firebase-admin'],
   async headers() {
     return [

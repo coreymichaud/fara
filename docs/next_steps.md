@@ -2,9 +2,9 @@
 
 ## Before the hackathon presentation
 
-1. Use the actual verification report and screenshots. Run the two-minute click path with a fresh plan and a second browser.
+1. Review the verification report and screenshots. Run the two-minute click path with a fresh plan and a second browser.
 2. Complete Google Cloud account/project prerequisites, then run the local-image deploy script and smoke-test the returned URL. Verify Firestore persistence across a redeploy before claiming it.
-3. Assemble the five-slide PowerPoint, record the short video, and upload through the team’s own account. No deck/video upload has been fabricated.
+3. Assemble the five-slide PowerPoint, record the short video, and upload through the team’s account.
 4. Keep private creator links out of public slides, recordings and shared documents.
 
 ## Before planning an actual event

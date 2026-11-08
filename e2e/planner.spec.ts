@@ -64,6 +64,12 @@ test('explore → scenario → compare → challenge → persistent share → su
 test('responsive layouts, visible brand styling, accessibility and screenshots', async ({
   page,
 }) => {
+  const chartWarnings: string[] = [];
+  page.on('console', (message) => {
+    if (message.text().includes('of chart should be greater than 0')) {
+      chartWarnings.push(message.text());
+    }
+  });
   await mkdir('docs/screenshots', { recursive: true });
   for (const [name, width, height] of [
     ['phone', 390, 844],
@@ -99,7 +105,8 @@ test('responsive layouts, visible brand styling, accessibility and screenshots',
   await page.getByRole('link', { name: 'Methodology', exact: true }).click();
   await expect(page.getByRole('heading', { name: /Useful signals/ })).toBeVisible();
   await page.getByRole('link', { name: /About/, exact: false }).first().click();
-  await expect(page.getByRole('heading', { name: /Make the next decision/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Plan a mobile pantry/ })).toBeVisible();
+  expect(chartWarnings).toEqual([]);
 });
 
 test('an unavailable basemap has a working local boundary fallback', async ({ page }) => {

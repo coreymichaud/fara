@@ -2,7 +2,7 @@
 
 FARA stands for **Food Access Resource Allocation**.
 
-Start the working app with the README commands, with JSON development storage or the Firestore Emulator explicitly selected. For a cloud presentation, replace the local URL only after deployment and smoke verification. Use a fresh plan for each take so survey n is real. Never preload fabricated responses or show the private creator link in the recording.
+Start the app with the README commands using JSON development storage or the Firestore Emulator. Use a fresh plan for each take and label survey submissions as demonstration responses. Keep the private creator link out of the recording. For a cloud presentation, deploy and smoke-test the public URL first.
 
 | Time      | Exact clicks                                                                                                                                                 | What to say                                                                                                                                                                                                                        |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

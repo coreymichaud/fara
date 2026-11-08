@@ -1,12 +1,12 @@
 # FARA · Food Access Resource Allocation
 
-FARA (Food Access Resource Allocation) helps Central Florida food banks and pantry planners turn public food-access indicators into one testable mobile distribution proposal: explore a tract, inspect the evidence, adjust a straight-line catchment and event capacity, compare candidate areas, record local objections, save a persistent decision brief, and invite anonymous community check-ins. It is an independent DevFest/Beacon challenge prototype, not an official DataKind product. The application has **no generative AI functionality**.
+FARA (Food Access Resource Allocation) helps Central Florida food banks and pantry planners choose where to investigate a mobile pantry event. Planners can inspect tract-level indicators, compare locations, set a radius and capacity, record local objections, save a proposal, and collect anonymous community feedback. Scoring is deterministic; the application has no generative AI functionality. FARA is an independent DevFest/Beacon challenge prototype, not an official DataKind product.
 
-**Current data mode: observed public indicators.** The local pipeline joins 490 tracts in Lake, Orange, Osceola and Seminole counties, with 488 eligible for scoring and 1,694 retailer points. It does not invent pantry sites or a baseline service network. See [verification](docs/VERIFICATION.md) for actual test/coverage results and deployment status; a local production image is not a live Cloud Run deployment.
+The local pipeline joins **490 census tracts** in Lake, Orange, Osceola and Seminole counties, with 488 eligible for scoring and 1,694 retailer points. The data does not describe existing pantry services. See [verification](docs/VERIFICATION.md) for test results, coverage, and deployment status. Cloud deployment is pending account setup.
 
-![Actual desktop planning workspace](docs/screenshots/planner-desktop.png)
+![FARA desktop planning workspace](docs/screenshots/planner-desktop.png)
 
-[Phone](docs/screenshots/planner-phone.png), [tablet](docs/screenshots/planner-tablet.png), and [presentation display](docs/screenshots/planner-presentation.png) are actual Chromium captures. Regenerate them with `npm run test:e2e`.
+[Phone](docs/screenshots/planner-phone.png), [tablet](docs/screenshots/planner-tablet.png), and [presentation display](docs/screenshots/planner-presentation.png) screenshots were captured in Chromium. Regenerate them with `npm run test:e2e`.
 
 ```text
 Local Beacon/public inputs ── uv + Pandas/DuckDB + spatial validation ── public/data/
@@ -21,15 +21,15 @@ Browser ── Next.js App Router / one Cloud Run container ── static map as
 
 Use macOS or Linux, or **Windows with WSL2 Ubuntu**. Run all shell, uv, npm and Google Cloud commands inside WSL; enable Docker Desktop’s WSL integration and keep the checkout in the Linux filesystem. Native PowerShell deployment scripts are not provided.
 
-| Tool             | Supported / purpose                                                                                                                                               | Install                                                                    |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Node.js          | 24 LTS recommended; package requires ≥22. Production image uses Node 24. Host verification also ran on Node 26, which produces an emulator-CLI dependency warning | [Node](https://nodejs.org/en/download)                                     |
-| npm              | 10+; use the committed lockfile and `npm ci`                                                                                                                      | Included with Node                                                         |
-| Python           | ≥3.12,<3.14; tested 3.12.14                                                                                                                                       | Managed by uv                                                              |
-| uv               | Tested 0.13.7; installs Python/dependencies as needed                                                                                                             | [uv installation](https://docs.astral.sh/uv/getting-started/installation/) |
-| Git              | Source only; raw and generated data stay ignored                                                                                                                  | [Git](https://git-scm.com/downloads)                                       |
-| Docker           | Needed for production builds; optional for local JSON development. Also provides a tested emulator path without installing Java                                   | [Docker](https://docs.docker.com/get-started/get-docker/)                  |
-| Google Cloud CLI | Deployment only, with a billed project and permissions                                                                                                            | [gcloud](https://cloud.google.com/sdk/docs/install)                        |
+| Tool             | Supported / purpose                                                                                                                                                        | Install                                                                    |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Node.js          | 24.15+ LTS recommended; supported ranges are declared in `package.json`. Production uses Node 24. Host checks also ran on Node 26, with an emulator-CLI dependency warning | [Node](https://nodejs.org/en/download)                                     |
+| npm              | 10+; use the committed lockfile and `npm ci`                                                                                                                               | Included with Node                                                         |
+| Python           | ≥3.12,<3.14; tested 3.12.14                                                                                                                                                | Managed by uv                                                              |
+| uv               | Tested 0.13.7; installs Python/dependencies as needed                                                                                                                      | [uv installation](https://docs.astral.sh/uv/getting-started/installation/) |
+| Git              | Source only; raw and generated data stay ignored                                                                                                                           | [Git](https://git-scm.com/downloads)                                       |
+| Docker           | Needed for production builds; optional for local JSON development. Also provides a tested emulator path without installing Java                                            | [Docker](https://docs.docker.com/get-started/get-docker/)                  |
+| Google Cloud CLI | Deployment only, with a billed project and permissions                                                                                                                     | [gcloud](https://cloud.google.com/sdk/docs/install)                        |
 
 The optional npm Firestore Emulator command needs a working Java runtime supported by Firebase CLI (Java 21+). The Docker emulator instructions below avoid that prerequisite.
 
@@ -43,7 +43,7 @@ src/lib/domain/          Pure typed schemas, scoring, Haversine and ranking
 src/lib/server/          Validated HTTP boundaries, creator auth and aggregation
 src/lib/storage/         Firestore production adapter / explicit local JSON adapter
 analysis/src/            Source-specific Python loaders, pipeline and notebook execution
-analysis/tests/          Tiny invented fixtures, property and pipeline tests
+analysis/tests/          Small synthetic fixtures, property and pipeline tests
 analysis/notebooks/      Six executed source EDAs, aggregate-only outputs
 data/raw/                LOCAL ONLY, immutable original inputs; ignored by Git and Docker
 data/processed/          Optional local intermediates; ignored, never required at runtime
@@ -66,9 +66,9 @@ SNAP_Retailer_Location_data.csv
 cb_2020_12_tract_500k.zip
 ```
 
-Keep the provided metadata/lookup/notes files beside them; they support the [data audit](docs/data_audit.md). Other challenge files are inventoried but unused. No Google Drive link is needed or substituted for uploaded files.
+Keep the provided metadata, lookup, and notes files beside them; they support the [data audit](docs/data_audit.md). Other challenge files are inventoried but unused.
 
-The supplied brand PDF and original build brief are local reference inputs and are excluded from Git. The committed `docs/` files describe the implemented product, design tokens, data methods, and operating procedures.
+Git excludes `data/`, `references/`, generated web assets, the original build brief, environment files, credentials, local stores, caches, and machine-specific editor and assistant files. `.env.example` is the only environment file intended for Git. The committed `docs/` files describe the product, design tokens, data methods, and operating procedures. `.dockerignore` separately restricts the build context to application code and the five permitted processed assets.
 
 The source bundle had no tract geometry. The official supplemental file was downloaded locally with:
 
@@ -98,7 +98,7 @@ npm run dev
 
 Open **http://localhost:3000**. Expected output includes `Validated 490 observed tracts` during validation and Next’s `Ready` message at startup. The local map uses official polygons and an external no-key OpenFreeMap basemap. If tiles fail, the labeled local boundary fallback remains available. Use the area list and coordinate fields for keyboard access. On phones, switch between **Explore areas / Map / Your plan**.
 
-`npm run dev` prepares the licensed same-origin MapLibre worker automatically. The pipeline prints detected counties, row counts, version and missingness. Missing or malformed inputs fail visibly; real-data mode never silently creates synthetic values. Unit tests use small explicitly invented fixtures; there is no automatic illustrative production-data fallback. A future illustrative build must be deliberately configured and visibly labeled, not disguised as these observed assets.
+`npm run dev` prepares the licensed same-origin MapLibre worker automatically. The pipeline reports counties, row counts, version, and missing values. Missing or malformed inputs stop processing with an error. Synthetic fixtures are used only in tests; the application requires the processed source data.
 
 To reproduce the source analysis:
 
@@ -192,7 +192,7 @@ Vitest requires **100% statements, branches, lines and functions** across author
 
 Reports: `coverage/index.html`, `coverage/coverage-summary.json`, `analysis/htmlcov/index.html`, `analysis/coverage.json`, and Playwright `test-results/` traces on failure. Format with `npm run format` and `cd analysis && uv run ruff format src tests`. Mypy remains strict for authored code; calls into untyped external nbformat are declared as that library boundary.
 
-GitHub Actions runs data-independent lint/types/unit/Python coverage with invented fixtures and a Firestore Emulator. It does not upload datasets, publish an image, or claim to verify the real-data production container. The production build and browser acceptance checks run locally on the machine holding the processed data.
+GitHub Actions runs lint, type checks, unit tests, Python checks, and coverage using synthetic fixtures and a Firestore Emulator. Its repository token has read-only access. Production builds and browser acceptance checks run locally on the machine holding the processed data; CI does not upload datasets or publish images.
 
 ## Build the exact production image locally
 
@@ -232,7 +232,7 @@ bash scripts/deploy-gcp.sh
 | Production missing map data                    | Re-run the local pipeline/validation and local Docker build. Git checkout alone has no generated data                                                             |
 | Stale generated assets                         | Re-run the pipeline. This refreshes packaging metadata, not source vintages; check whether newer actual source data is needed                                     |
 | Cloud Run startup failure                      | Check `PORT=8080`, standalone file copies and logs using deployment-guide commands                                                                                |
-| Survey closed / duplicate browser response     | Creator can reopen it; existing browser cookie is a best-effort duplicate guard. No response is fabricated or silently accepted                                   |
+| Survey closed / duplicate browser response     | Creator can reopen it. An existing browser cookie prevents a second submission from that browser; this is a best-effort guard                                     |
 | Creator results show suppression               | Expected when n<5 or any nonzero cell<5. No breakdown is exposed until disclosure rules are satisfied                                                             |
 
 Read the [data audit](docs/data_audit.md), [dictionary](docs/data_dictionary.md), [transformations](docs/transformations.md), [methodology](docs/methodology.md), [limitations](docs/limitations.md), [judge demo](docs/demo_script.md), and [handoff checklist](docs/HANDOFF_CHECKLIST.md). No transit/travel time, actual pantry utilization, or causal impact is modeled.

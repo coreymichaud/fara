@@ -1,11 +1,11 @@
 # Handoff checklist
 
-Use [VERIFICATION.md](VERIFICATION.md) as the actual-results ledger. An unchecked box is not a completed task.
+See [VERIFICATION.md](VERIFICATION.md) for measured results and the scope of each check.
 
 - [x] Entire authoritative build brief read.
 - [x] All supplied local source files inventoried; relevant contents/definitions inspected.
 - [x] Beacon PDF extracted and logo/palette/typography/component pages visually inspected.
-- [x] Font families, sizes, line height and palette documented; no font/logo invented.
+- [x] Font families, sizes, line height and palette documented.
 - [x] Observed-data mode identified throughout the workspace/share flow; no synthetic fallback.
 - [x] Four supplied Central Florida counties discovered; 490 exact tract joins validated.
 - [x] Known retailer coordinate anomaly explicitly excluded and documented.
@@ -19,10 +19,10 @@ Use [VERIFICATION.md](VERIFICATION.md) as the actual-results ledger. An unchecke
 - [x] Desktop, phone, tablet and presentation captures inspected; automated workspace accessibility audit run.
 - [x] All-checks orchestrator passes; final measured results recorded in `VERIFICATION.md`.
 - [ ] Cloud Run deployed with an authenticated billed project and dedicated service account.
-- [ ] Actual `run.app` URL smoke-tested and mutable flow verified across redeploy.
+- [ ] Public `run.app` URL smoke-tested and mutable flow verified across redeploy.
 - [x] README and initial Google Cloud deployment walkthrough written.
 - [x] Two-minute demo script, PowerPoint outline, video shot list and rubric notes provided.
 - [ ] PowerPoint assembled by a teammate.
 - [ ] Video recorded, reviewed for secrets, and uploaded by a teammate.
 
-Cloud blocker observed locally: no host Google Cloud CLI installation and no local Google ADC file. No live URL is claimed. The exact setup and remaining deploy commands are in [DEPLOYMENT.md](DEPLOYMENT.md).
+Cloud deployment requires a Google Cloud CLI installation, authentication, and a billed project. Setup and deployment commands are in [DEPLOYMENT.md](DEPLOYMENT.md).

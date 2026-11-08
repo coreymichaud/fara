@@ -2,8 +2,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { EvidenceChart } from '@/features/planner/evidence-chart';
 import { areas } from './fixtures';
-it('provides a textual data alternative and honest missing-indicator state', () => {
-  vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+it('provides a textual data alternative without size warnings when the panel is hidden', () => {
+  const warn = vi.spyOn(console, 'warn');
   const view = render(<EvidenceChart area={areas[0]} areas={areas} />);
   expect(screen.getByText(/county mean 20.0 percent/)).toBeInTheDocument();
   view.rerender(
@@ -12,6 +12,7 @@ it('provides a textual data alternative and honest missing-indicator state', () 
   expect(
     screen.getByText(/Selected tract poverty: missing percent; county mean unavailable/),
   ).toBeInTheDocument();
+  expect(warn).not.toHaveBeenCalled();
 });
 it('renders percent axes and formats an accessible keyboard tooltip', async () => {
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
